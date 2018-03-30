@@ -1,5 +1,6 @@
 package com.acube.autoresponder.services;
 
+import android.arch.persistence.room.Room;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
@@ -9,6 +10,9 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 import com.acube.autoresponder.Config;
+import com.acube.autoresponder.database.MessageDatabase;
+import com.acube.autoresponder.database.Messages;
+import com.acube.autoresponder.utils.Utils;
 
 /**
  * Created by Anns on 23/03/18.
@@ -16,11 +20,13 @@ import com.acube.autoresponder.Config;
 
 public class NotificationService extends NotificationListenerService {
     Context context;
+    MessageDatabase messageDatabase;
 
     @Override
     public void onCreate() {
         super.onCreate();
         context = getApplicationContext();
+        messageDatabase = Room.databaseBuilder(context,MessageDatabase.class,"auto-respond").build();
     }
 
     @Override
@@ -59,8 +65,18 @@ public class NotificationService extends NotificationListenerService {
     }
 
     private void parseNotification(StatusBarNotification sbn) {
+        Messages messages = new Messages();
+        messages.setContact_number(Utils.getMobileNumber(sbn.getTag()));
         Bundle extras = sbn.getNotification().extras;
         String text = extras.getCharSequence("android.text").toString();
+        messages.setMessage_text(text);
+        messages.setMessage_time(sbn.getNotification().when);
+
+       Messages check =  messageDatabase.daoAcess().checkMessageExists(sbn.getNotification().when);
+       if(check == null)
+           messageDatabase.daoAcess().insertOnlySingleRecord(messages);
+        else
+            Log.i("Record Status","Record Already inserted");
     }
 
     @Override
