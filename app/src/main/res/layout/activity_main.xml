@@ -10,13 +10,16 @@
         android:layout_height="wrap_content"
         android:text="Refresh"
         android:onClick="doTestFunction"
-        android:visibility="gone"/>
+        android:visibility="visible"/>
 
 
     <ListView
         android:id="@+id/list"
         android:layout_height="wrap_content"
-        android:layout_width="match_parent">
+        android:layout_width="match_parent"
+        android:visibility="visible">
     </ListView>
+
+
 
 </LinearLayout>
