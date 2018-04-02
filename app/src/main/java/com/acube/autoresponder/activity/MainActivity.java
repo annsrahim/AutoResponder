@@ -68,7 +68,7 @@ public class MainActivity extends AppCompatActivity {
         String enabledListeners = Settings.Secure.getString(this.getContentResolver(),
                 "enabled_notification_listeners");
 
-        if(!enabledListeners.contains("services.NotificationService"))
+        if(enabledListeners==null || !enabledListeners.contains("services.NotificationService"))
         {
             Utils.showToast(this,"Please enable notification access to avail the service");
             Intent intent = new Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS");

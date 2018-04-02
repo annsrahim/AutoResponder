@@ -26,7 +26,7 @@ public class NotificationService extends NotificationListenerService {
     public void onCreate() {
         super.onCreate();
         context = getApplicationContext();
-        messageDatabase = Room.databaseBuilder(context,MessageDatabase.class,"auto-respond").build();
+        messageDatabase = Room.databaseBuilder(context,MessageDatabase.class,"auto-respond").allowMainThreadQueries().build();
     }
 
     @Override
@@ -71,12 +71,19 @@ public class NotificationService extends NotificationListenerService {
         String text = extras.getCharSequence("android.text").toString();
         messages.setMessage_text(text);
         messages.setMessage_time(sbn.getNotification().when);
+        try
+        {
+            Messages check =  messageDatabase.daoAcess().checkMessageExists(sbn.getNotification().when);
+            if(check == null)
+                messageDatabase.daoAcess().insertOnlySingleRecord(messages);
+            else
+                Log.i("Record Status","Record Already inserted");
+        }
+        catch (Exception ae)
+        {
+            Log.d("Excep",ae.getLocalizedMessage());
+        }
 
-       Messages check =  messageDatabase.daoAcess().checkMessageExists(sbn.getNotification().when);
-       if(check == null)
-           messageDatabase.daoAcess().insertOnlySingleRecord(messages);
-        else
-            Log.i("Record Status","Record Already inserted");
     }
 
     @Override
