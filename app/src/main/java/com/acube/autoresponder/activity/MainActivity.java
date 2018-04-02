@@ -13,6 +13,7 @@ import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.provider.Settings;
 import android.service.notification.StatusBarNotification;
 import android.support.annotation.NonNull;
@@ -26,6 +27,7 @@ import android.telephony.PhoneNumberUtils;
 import android.text.Html;
 import android.util.Log;
 import android.view.View;
+import android.webkit.WebView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TableLayout;
@@ -51,11 +53,14 @@ public class MainActivity extends AppCompatActivity {
     List<String> incomingChats = new ArrayList<>();
     ArrayAdapter<String> adapter;
 
+    private int REQUEST_INTERNET = 11;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         list = (ListView)findViewById(R.id.list);
+
          adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1,incomingChats);
         list.setAdapter(adapter);
         messageDatabase = Utils.getMessageDatabase(this);
@@ -68,6 +73,13 @@ public class MainActivity extends AppCompatActivity {
             Utils.showToast(this,"Please enable notification access to avail the service");
             Intent intent = new Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS");
             startActivity(intent);
+        }
+        int currentAPIVersion = Build.VERSION.SDK_INT;
+        if(currentAPIVersion>=android.os.Build.VERSION_CODES.M)
+        {
+                if (ContextCompat.checkSelfPermission(this, Manifest.permission.INTERNET) != PackageManager.PERMISSION_GRANTED) {
+                    ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.INTERNET}, REQUEST_INTERNET);
+                }
         }
 
 
@@ -97,7 +109,14 @@ public class MainActivity extends AppCompatActivity {
 
 
     public void doTestFunction(View view) {
-//
+
         new DatabaseAsync().execute();
+        sendTestMessage();
+
+    }
+
+    public void sendTestMessage()
+    {
+
     }
 }
