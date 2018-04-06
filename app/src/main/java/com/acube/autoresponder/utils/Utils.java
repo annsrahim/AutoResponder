@@ -39,6 +39,6 @@ public class Utils {
     }
     public static MessageDatabase getMessageDatabase(Context context)
     {
-       return Room.databaseBuilder(context,MessageDatabase.class,"auto-respond").build();
+       return Room.databaseBuilder(context,MessageDatabase.class,"auto-respond").allowMainThreadQueries().build();
     }
 }

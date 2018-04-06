@@ -23,6 +23,7 @@ import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.Toolbar;
 import android.telephony.PhoneNumberUtils;
 import android.text.Html;
 import android.util.Log;
@@ -52,13 +53,13 @@ public class MainActivity extends AppCompatActivity {
     private ListView list;
     List<String> incomingChats = new ArrayList<>();
     ArrayAdapter<String> adapter;
-
-    private int REQUEST_INTERNET = 11;
+    Toolbar toolbar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        initToolbar();
         list = (ListView)findViewById(R.id.list);
 
          adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1,incomingChats);
@@ -78,11 +79,34 @@ public class MainActivity extends AppCompatActivity {
         if(currentAPIVersion>=android.os.Build.VERSION_CODES.M)
         {
                 if (ContextCompat.checkSelfPermission(this, Manifest.permission.INTERNET) != PackageManager.PERMISSION_GRANTED) {
-                    ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.INTERNET}, REQUEST_INTERNET);
+                    int REQUEST_INTERNET = 11;
+                    ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.INTERNET,Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_INTERNET);
                 }
         }
 
 
+    }
+
+    private void initToolbar() {
+        toolbar = (Toolbar)findViewById(R.id.toolbar);
+        toolbar.setTitle(R.string.app_name);
+        toolbar.setTitleTextColor(ContextCompat.getColor(this,R.color.WHITE));
+    }
+
+    public void clearDB(View view) {
+        try{
+            messageDatabase.daoAcess().clearDatabase();
+        }
+        catch (Exception e)
+        {
+            Log.e("Error DB",e.getLocalizedMessage());
+        }
+        new DatabaseAsync().execute();
+    }
+
+    public void goToAddTemplate(View view) {
+        Intent intent = new Intent(this,AddTemplateActivity.class);
+        startActivity(intent);
     }
 
 
@@ -95,7 +119,7 @@ public class MainActivity extends AppCompatActivity {
             incomingChats.clear();
             for(Messages message: messages)
             {
-                incomingChats.add(message.getContact_number()+" : "+message.getMessage_text());
+                incomingChats.add(message.getContact_number()+" : "+message.getMessage_text()+" : "+message.getStatus());
             }
             return null;
         }
@@ -117,6 +141,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void sendTestMessage()
     {
+
 
     }
 }

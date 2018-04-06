@@ -4,6 +4,7 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/AutoResponder.iml" filepath="$PROJECT_DIR$/AutoResponder.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/notifLib/notifLib.iml" filepath="$PROJECT_DIR$/notifLib/notifLib.iml" />
     </modules>
   </component>
 </project>

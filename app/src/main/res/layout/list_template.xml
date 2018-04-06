@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingTop="5dp"
+        android:paddingBottom="5dp">
+        <TextView
+            android:id="@+id/list_id"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:text="Sno"
+            android:gravity="center"
+            android:layout_weight="0.5"
+            />
+        <TextView
+            android:id="@+id/list_message"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:text="Template Sample"
+            android:gravity="center_vertical"
+            android:layout_weight="3"/>
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_weight="0.5"
+            android:scaleType="center"
+            android:src="@drawable/ic_mode_edit_deep_purple" />
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            android:layout_weight="0.5"
+            android:scaleType="center"
+            android:src="@drawable/ic_delete_red" />
+    </LinearLayout>
+
+
+</LinearLayout>
