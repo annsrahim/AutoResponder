@@ -2,9 +2,11 @@ package com.acube.autoresponder.utils;
 
 import android.arch.persistence.room.Room;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.provider.Settings;
 import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AlertDialog;
 import android.widget.Toast;
 
 import com.acube.autoresponder.R;
@@ -40,5 +42,20 @@ public class Utils {
     public static MessageDatabase getMessageDatabase(Context context)
     {
        return Room.databaseBuilder(context,MessageDatabase.class,"auto-respond").allowMainThreadQueries().build();
+    }
+
+    public static void showAlert(Context context,String title,String msg)
+    {
+
+        new AlertDialog.Builder(context)
+                .setTitle(title)
+                .setMessage(msg)
+                .setIcon(android.R.drawable.ic_dialog_alert)
+                .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        dialog.dismiss();
+                    }});
+
     }
 }

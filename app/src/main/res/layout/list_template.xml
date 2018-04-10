@@ -2,43 +2,58 @@
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent"
     android:layout_height="match_parent">
-    <LinearLayout
+    <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:paddingTop="5dp"
         android:paddingBottom="5dp">
+
         <TextView
             android:id="@+id/list_id"
             android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:text="Sno"
+            android:layout_height="wrap_content"
             android:gravity="center"
-            android:layout_weight="0.5"
+            android:text="Sno"
+            android:layout_margin="5dp"
+
             />
+
         <TextView
             android:id="@+id/list_message"
             android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:text="Template Sample"
+            android:layout_height="wrap_content"
+            android:layout_margin="5dp"
+            android:layout_marginEnd="5dp"
+            android:layout_toEndOf="@id/list_id"
             android:gravity="center_vertical"
-            android:layout_weight="3"/>
+            android:text="Template Sample" />
 
-        <ImageView
+        <ImageButton
+            android:id="@+id/list_iv_edit"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:layout_weight="0.5"
+            android:layout_marginBottom="5dp"
+            android:layout_marginEnd="20dp"
+            android:layout_marginTop="5dp"
+            android:layout_toStartOf="@id/list_iv_delete"
+            android:background="@android:color/transparent"
             android:scaleType="center"
             android:src="@drawable/ic_mode_edit_deep_purple" />
 
-        <ImageView
+        <ImageButton
+            android:id="@+id/list_iv_delete"
             android:layout_width="wrap_content"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
             android:layout_gravity="center"
-            android:layout_weight="0.5"
+            android:layout_marginBottom="5dp"
+            android:layout_marginEnd="20dp"
+            android:layout_marginTop="5dp"
+            android:background="@android:color/transparent"
             android:scaleType="center"
             android:src="@drawable/ic_delete_red" />
-    </LinearLayout>
+    </RelativeLayout>
 
 
 </LinearLayout>

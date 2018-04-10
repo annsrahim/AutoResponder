@@ -105,6 +105,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void goToAddTemplate(View view) {
+
         Intent intent = new Intent(this,AddTemplateActivity.class);
         startActivity(intent);
     }
@@ -119,7 +120,7 @@ public class MainActivity extends AppCompatActivity {
             incomingChats.clear();
             for(Messages message: messages)
             {
-                incomingChats.add(message.getContact_number()+" : "+message.getMessage_text()+" : "+message.getStatus());
+                incomingChats.add(message.getContact_number()+" : "+message.getMessage_text()+" : "+message.getStatus()+"----"+message.getQueue());
             }
             return null;
         }

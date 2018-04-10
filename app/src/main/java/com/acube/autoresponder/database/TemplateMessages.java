@@ -11,6 +11,16 @@ public class TemplateMessages {
     @PrimaryKey(autoGenerate = true)
     private int id;
 
+    public int getOrderNo() {
+        return orderNo;
+    }
+
+    public void setOrderNo(int orderNo) {
+        this.orderNo = orderNo;
+    }
+
+    private int orderNo;
+
     private String templates;
 
     public int getId() {

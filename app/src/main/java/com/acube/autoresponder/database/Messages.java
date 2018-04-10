@@ -28,6 +28,16 @@ public class Messages {
     private long message_time;
     private int status;
 
+    public int getQueue() {
+        return queue;
+    }
+
+    public void setQueue(int queue) {
+        this.queue = queue;
+    }
+
+    private int queue;
+
     public int getId() {
         return id;
     }
