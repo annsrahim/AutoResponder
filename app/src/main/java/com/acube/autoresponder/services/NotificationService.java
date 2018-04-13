@@ -7,8 +7,10 @@ import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
 import android.util.Log;
 
+import com.acube.autoresponder.Config;
 import com.acube.autoresponder.database.MessageDatabase;
 import com.acube.autoresponder.database.Messages;
+import com.acube.autoresponder.utils.SharedPreferenceUtils;
 import com.acube.autoresponder.utils.Utils;
 
 /**
@@ -76,6 +78,16 @@ public class NotificationService extends NotificationListenerService {
                         }
                         else
                         {
+                            if(isNumberAvailable.getStatus()==templateMessageCount+1)
+                            {
+                                Log.d(Config.TAG, SharedPreferenceUtils.getStringData(context,Config.Image1Path));
+                                String path1 = SharedPreferenceUtils.getStringData(context,Config.Image1Path);
+                                String path2 = SharedPreferenceUtils.getStringData(context,Config.Image2Path);
+                                String mobileNumber = isNumberAvailable.getContact_number();
+                                Utils.sendMultipleWhatsappImage(context,path1,path2,mobileNumber);
+                                isNumberAvailable.setStatus(templateMessageCount+2);
+                            }
+
                             isNumberAvailable.setQueue(0);
                         }
 

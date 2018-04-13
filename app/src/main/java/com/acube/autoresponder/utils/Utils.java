@@ -1,16 +1,31 @@
 package com.acube.autoresponder.utils;
 
+import android.Manifest;
+import android.annotation.TargetApi;
+import android.app.Activity;
 import android.arch.persistence.room.Room;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.net.Uri;
+import android.os.Build;
+import android.provider.MediaStore;
 import android.provider.Settings;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
+import android.telephony.PhoneNumberUtils;
 import android.widget.Toast;
 
 import com.acube.autoresponder.R;
 import com.acube.autoresponder.database.MessageDatabase;
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.util.ArrayList;
 
 /**
  * Created by Anns on 23/03/18.
@@ -57,5 +72,84 @@ public class Utils {
                         dialog.dismiss();
                     }});
 
+    }
+
+    public static final int MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE = 123;
+    @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
+    public static boolean checkPermission(final Context context)
+    {
+        int currentAPIVersion = Build.VERSION.SDK_INT;
+        if(currentAPIVersion>=android.os.Build.VERSION_CODES.M)
+        {
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                if (ActivityCompat.shouldShowRequestPermissionRationale((Activity) context, Manifest.permission.READ_EXTERNAL_STORAGE)) {
+                    AlertDialog.Builder alertBuilder = new AlertDialog.Builder(context);
+                    alertBuilder.setCancelable(true);
+                    alertBuilder.setTitle("Permission necessary");
+                    alertBuilder.setMessage("External storage permission is necessary");
+                    alertBuilder.setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                        @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
+                        public void onClick(DialogInterface dialog, int which) {
+                            ActivityCompat.requestPermissions((Activity) context, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE);
+                        }
+                    });
+                    AlertDialog alert = alertBuilder.create();
+                    alert.show();
+                } else {
+                    ActivityCompat.requestPermissions((Activity) context, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE);
+                }
+                return false;
+            } else {
+                return true;
+            }
+        } else {
+            return true;
+        }
+    }
+
+
+    public static Uri getImageUri(Context inContext, Bitmap inImage) {
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        inImage.compress(Bitmap.CompressFormat.JPEG, 100, bytes);
+        String path = MediaStore.Images.Media.insertImage(inContext.getContentResolver(), inImage, "Title", null);
+        return Uri.parse(path);
+    }
+
+
+    public static void sendWhatsappImage(Context context,String path)
+    {
+        Intent sendIntent = new Intent("android.intent.action.SEND");
+        sendIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        File f=new File("path to the file");
+        Uri uri = Uri.parse(path);
+        sendIntent.setComponent(new ComponentName("com.whatsapp","com.whatsapp.ContactPicker"));
+        sendIntent.setType("image");
+        sendIntent.putExtra(Intent.EXTRA_STREAM,uri);
+        sendIntent.putExtra("jid", PhoneNumberUtils.stripSeparators("918197713454")+"@s.whatsapp.net");
+        sendIntent.putExtra(Intent.EXTRA_TEXT,"sample text you want to send along with the image");
+        context.startActivity(sendIntent);
+    }
+    public static void sendMultipleWhatsappImage(Context context,String path1,String path2,String mobNumber)
+    {
+
+        Intent intent = new Intent();
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        intent.setAction(Intent.ACTION_SEND);
+        intent.putExtra(Intent.EXTRA_SUBJECT, "Here are some files.");
+        intent.setType("text/plain");
+        intent.setType("image/jpeg"); /* This example is sharing jpeg images. */
+        intent.setComponent(new ComponentName("com.whatsapp","com.whatsapp.ContactPicker"));
+        ArrayList<Uri> files = new ArrayList<Uri>();
+        Uri uri1 = Uri.parse(path1);
+        Uri uri2 = Uri.parse(path2);
+        files.add(uri1);
+        files.add(uri2);
+
+        intent.putExtra(Intent.EXTRA_TEXT, "Text caption message!!");
+        intent.setType("text/plain");
+        intent.setType("image/jpeg");
+        intent.putExtra("jid", PhoneNumberUtils.stripSeparators(mobNumber)+"@s.whatsapp.net");
+        intent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, files);
+        context.startActivity(intent);
     }
 }
