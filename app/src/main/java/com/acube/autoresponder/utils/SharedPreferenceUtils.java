@@ -23,4 +23,17 @@ public class SharedPreferenceUtils {
         myPrefs = context.getSharedPreferences(Config.MyPREFERENCES, Context.MODE_PRIVATE);
         return myPrefs.getString(name, "");
     }
+    public static void setIntData(Context context,String name,int value)
+    {
+        SharedPreferences sharedpreferences = context.getSharedPreferences(Config.MyPREFERENCES, Context.MODE_PRIVATE);;
+        SharedPreferences.Editor editor = sharedpreferences.edit();
+        editor.putInt(name, value);
+        editor.apply();
+    }
+    public static int getIntData(Context context,String name)
+    {
+        SharedPreferences myPrefs;
+        myPrefs = context.getSharedPreferences(Config.MyPREFERENCES, Context.MODE_PRIVATE);
+        return myPrefs.getInt(name, 0);
+    }
 }

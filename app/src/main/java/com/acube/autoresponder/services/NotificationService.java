@@ -85,8 +85,10 @@ public class NotificationService extends NotificationListenerService {
                                 String path2 = SharedPreferenceUtils.getStringData(context,Config.Image2Path);
                                 String mobileNumber = isNumberAvailable.getContact_number();
                                 Utils.sendMultipleWhatsappImage(context,path1,path2,mobileNumber);
-                                isNumberAvailable.setStatus(templateMessageCount+2);
+                                customNotificaionUtils.scheduledLastReply(sbn);
+                                isNumberAvailable.setStatus(templateMessageCount+3);
                             }
+
 
                             isNumberAvailable.setQueue(0);
                         }
@@ -95,6 +97,7 @@ public class NotificationService extends NotificationListenerService {
                     }
 
                     messageDatabase.daoAcess().updateRecord(isNumberAvailable);
+
                 }
 
 

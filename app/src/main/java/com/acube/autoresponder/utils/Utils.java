@@ -3,29 +3,46 @@ package com.acube.autoresponder.utils;
 import android.Manifest;
 import android.annotation.TargetApi;
 import android.app.Activity;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.arch.persistence.room.Room;
 import android.content.ComponentName;
+import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Environment;
+import android.os.Parcelable;
+import android.os.PowerManager;
+import android.provider.ContactsContract;
 import android.provider.MediaStore;
 import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.telephony.PhoneNumberUtils;
+import android.util.Log;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.Toast;
 
+import com.acube.autoresponder.Config;
 import com.acube.autoresponder.R;
 import com.acube.autoresponder.database.MessageDatabase;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Calendar;
 
 /**
  * Created by Anns on 23/03/18.
@@ -132,9 +149,10 @@ public class Utils {
     public static void sendMultipleWhatsappImage(Context context,String path1,String path2,String mobNumber)
     {
 
+
         Intent intent = new Intent();
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        intent.setAction(Intent.ACTION_SEND);
+        intent.setAction(Intent.ACTION_SEND_MULTIPLE);
         intent.putExtra(Intent.EXTRA_SUBJECT, "Here are some files.");
         intent.setType("text/plain");
         intent.setType("image/jpeg"); /* This example is sharing jpeg images. */
@@ -145,11 +163,24 @@ public class Utils {
         files.add(uri1);
         files.add(uri2);
 
-        intent.putExtra(Intent.EXTRA_TEXT, "Text caption message!!");
+//        intent.putExtra(Intent.EXTRA_TEXT, "Text caption message!!");
         intent.setType("text/plain");
         intent.setType("image/jpeg");
         intent.putExtra("jid", PhoneNumberUtils.stripSeparators(mobNumber)+"@s.whatsapp.net");
-        intent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, files);
-        context.startActivity(intent);
+        intent.putParcelableArrayListExtra(Intent.EXTRA_STREAM,files);
+
+
+        int messageDelay  = SharedPreferenceUtils.getIntData(context,Config.MESSAGE_DELAY);
+        PendingIntent pendingIntent = PendingIntent.getActivity(context,444,intent,PendingIntent.FLAG_UPDATE_CURRENT);
+        AlarmManager am = (AlarmManager) context.getSystemService(Activity.ALARM_SERVICE);
+        Calendar calendar = Calendar.getInstance();
+//        calendar.add(Calendar.MINUTE,10);
+        am.set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), pendingIntent);
+
     }
+
+
+
+
 }
+

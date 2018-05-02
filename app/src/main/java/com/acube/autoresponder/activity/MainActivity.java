@@ -3,6 +3,7 @@ package com.acube.autoresponder.activity;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.KeyguardManager;
 import android.app.NotificationManager;
 import android.arch.persistence.room.Room;
 import android.arch.persistence.room.RoomDatabase;
@@ -14,12 +15,15 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteException;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Environment;
+import android.os.PowerManager;
 import android.os.SystemClock;
 import android.os.Vibrator;
 import android.provider.MediaStore;
@@ -40,11 +44,14 @@ import android.text.Html;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.WindowManager;
 import android.webkit.WebView;
 import android.widget.ArrayAdapter;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TableLayout;
 import android.widget.TableRow;
@@ -63,12 +70,14 @@ import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.drive.Drive;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
@@ -76,37 +85,26 @@ import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
 
-public class MainActivity extends AppCompatActivity implements
-        GoogleApiClient.ConnectionCallbacks,GoogleApiClient.OnConnectionFailedListener {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener{
 
     private static final int REQUEST_CAMERA = 22;
     private static final int REQUEST_CODE_RESOLVE_ERR = 11;
     private static final int SELECT_FILE = 33 ;
-    TableLayout tab;
+
+
     MessageDatabase messageDatabase;
     private ListView list;
     List<String> incomingChats = new ArrayList<>();
     ArrayAdapter<String> adapter;
     Toolbar toolbar;
-    private GoogleApiClient mGoogleApiClient;
-    ConnectionResult mConnectionResult;
+
     private String userChoosenTask="";
     private ImageView imageView1,imageView2;
     private int selectedImage = 1;
     Bitmap bmpImage1,bmpImage2;
+    TextView tvMessageDelay,tvLastMessageDelay,tvTemplateLastMessage;
+    ImageButton ibAddMessageDelay,ibSubMessageDelay,ibLastAddMessageDelay,ibLastSubMessageDelay,ibTemplateLastMessage;
 
-   /*
-    private TextView recordTimeText;
-    private ImageButton audioSendButton;
-    private View recordPanel;
-    private View slideText;
-    private float startedDraggingX = -1;
-    private float distCanMove = dp(80);
-    private Timer timer;
-    private long startTime = 0L;
-    long timeInMilliseconds = 0L;
-    long timeSwapBuff = 0L;
-    long updatedTime = 0L; */
 
     @SuppressLint("ClickableViewAccessibility")
     @Override
@@ -115,8 +113,9 @@ public class MainActivity extends AppCompatActivity implements
         setContentView(R.layout.activity_main);
         initToolbar();
         initUI();
-
-
+        disableScreenLock();
+        setMessageinterval();
+        setLastMessageTemplate();
         imageView1.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -155,148 +154,51 @@ public class MainActivity extends AppCompatActivity implements
 
 
     }
-/*
-    private boolean setAudioRecordOptions(View view, MotionEvent motionEvent) {
 
-        if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
-            FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) slideText
-                    .getLayoutParams();
-            params.leftMargin = dp(30);
-            slideText.setLayoutParams(params);
-            ViewProxy.setAlpha(slideText, 1);
-            startedDraggingX = -1;
-            // startRecording();
-            startrecord();
-            audioSendButton.getParent()
-                    .requestDisallowInterceptTouchEvent(true);
-            recordPanel.setVisibility(View.VISIBLE);
-        } else if (motionEvent.getAction() == MotionEvent.ACTION_UP
-                || motionEvent.getAction() == MotionEvent.ACTION_CANCEL) {
-            startedDraggingX = -1;
-            stoprecord();
-            // stopRecording(true);
-        } else if (motionEvent.getAction() == MotionEvent.ACTION_MOVE) {
-            float x = motionEvent.getX();
-            if (x < -distCanMove) {
-                stoprecord();
-                // stopRecording(false);
-            }
-            x = x + ViewProxy.getX(audioSendButton);
-            FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) slideText
-                    .getLayoutParams();
-            if (startedDraggingX != -1) {
-                float dist = (x - startedDraggingX);
-                params.leftMargin = dp(30) + (int) dist;
-                slideText.setLayoutParams(params);
-                float alpha = 1.0f + dist / distCanMove;
-                if (alpha > 1) {
-                    alpha = 1;
-                } else if (alpha < 0) {
-                    alpha = 0;
-                }
-                ViewProxy.setAlpha(slideText, alpha);
-            }
-            if (x <= ViewProxy.getX(slideText) + slideText.getWidth()
-                    + dp(30)) {
-                if (startedDraggingX == -1) {
-                    startedDraggingX = x;
-                    distCanMove = (recordPanel.getMeasuredWidth()
-                            - slideText.getMeasuredWidth() - dp(48)) / 2.0f;
-                    if (distCanMove <= 0) {
-                        distCanMove = dp(80);
-                    } else if (distCanMove > dp(80)) {
-                        distCanMove = dp(80);
-                    }
-                }
-            }
-            if (params.leftMargin > dp(30)) {
-                params.leftMargin = dp(30);
-                slideText.setLayoutParams(params);
-                ViewProxy.setAlpha(slideText, 1);
-                startedDraggingX = -1;
-            }
-        }
-        view.onTouchEvent(motionEvent);
-        return true;
+    private void setLastMessageTemplate() {
+        String lastMessageTemplate = SharedPreferenceUtils.getStringData(this,Config.LAST_MESSAGE_TEMPLATE);
+        tvTemplateLastMessage.setText(lastMessageTemplate);
     }
 
-    private void stoprecord() {
-        if (timer != null) {
-            timer.cancel();
-        }
-        if (recordTimeText.getText().toString().equals("00:00")) {
-            return;
-        }
-        recordTimeText.setText("00:00");
-        vibrate();
-
-    }
-    class MyTimerTask extends TimerTask {
-
-        @Override
-        public void run() {
-            timeInMilliseconds = SystemClock.uptimeMillis() - startTime;
-            updatedTime = timeSwapBuff + timeInMilliseconds;
-            final String hms = String.format(
-                    "%02d:%02d",
-                    TimeUnit.MILLISECONDS.toMinutes(updatedTime)
-                            - TimeUnit.HOURS.toMinutes(TimeUnit.MILLISECONDS
-                            .toHours(updatedTime)),
-                    TimeUnit.MILLISECONDS.toSeconds(updatedTime)
-                            - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS
-                            .toMinutes(updatedTime)));
-            long lastsec = TimeUnit.MILLISECONDS.toSeconds(updatedTime)
-                    - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS
-                    .toMinutes(updatedTime));
-            System.out.println(lastsec + " hms " + hms);
-            runOnUiThread(new Runnable() {
-
-                @Override
-                public void run() {
-                    try {
-                        if (recordTimeText != null)
-                            recordTimeText.setText(hms);
-                    } catch (Exception e) {
-                        // TODO: handle exception
-                    }
-
-                }
-            });
-        }
-    }
-    private void vibrate() {
-        try {
-            Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
-            v.vibrate(200);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void startrecord() {
-        startTime = SystemClock.uptimeMillis();
-        timer = new Timer();
-        MyTimerTask myTimerTask = new MyTimerTask();
-        timer.schedule(myTimerTask, 1000, 1000);
-        vibrate();
+    private void setMessageinterval() {
+        int messageDelay = SharedPreferenceUtils.getIntData(this,Config.MESSAGE_DELAY);
+        int lastMessageDelay = SharedPreferenceUtils.getIntData(this,Config.LAST_MESSAGE_DELAY);
+        tvMessageDelay.setText(String.valueOf(messageDelay));
+        tvLastMessageDelay.setText(String.valueOf(lastMessageDelay));
 
     }
 
-    public static int dp(float value) {
-        return (int) Math.ceil(1 * value);
-    } */
+    private void disableScreenLock() {
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+
+    }
+
+
 
     private void initUI() {
         list = (ListView)findViewById(R.id.list);
         imageView1 = (ImageView)findViewById(R.id.ivImage1);
         imageView2 = (ImageView)findViewById(R.id.ivImage2);
-/*
-        recordPanel = findViewById(R.id.record_panel);
-        recordTimeText = (TextView) findViewById(R.id.recording_time_text);
-        slideText = findViewById(R.id.slideText);
-        audioSendButton = (ImageButton) findViewById(R.id.chat_audio_send_button);
-        TextView textView = (TextView) findViewById(R.id.slideToCancelTextView);
-        textView.setText("SlideToCancel");  */
+        tvMessageDelay = (TextView) findViewById(R.id.tv_message_delay);
+        tvMessageDelay.setText(String.valueOf(Config.MessageDelay));
+        tvLastMessageDelay = (TextView)findViewById(R.id.tv_last_message_delay);
+        ibAddMessageDelay  = (ImageButton)findViewById(R.id.ib_add_message_delay);
+        ibSubMessageDelay  = (ImageButton)findViewById(R.id.ib_sub_message_delay);
+        ibLastAddMessageDelay = (ImageButton)findViewById(R.id.ib_add_last_message_delay);
+        ibLastSubMessageDelay = (ImageButton)findViewById(R.id.ib_sub_last_message_delay);
+        tvTemplateLastMessage = (TextView)findViewById(R.id.tv_template_last_message);
+        ibTemplateLastMessage = (ImageButton)findViewById(R.id.ib_template_last_message);
+        ibTemplateLastMessage.setOnClickListener(this);
+        ibLastAddMessageDelay.setOnClickListener(this);
+        ibLastSubMessageDelay.setOnClickListener(this);
+        ibAddMessageDelay.setOnClickListener(this);
+        ibSubMessageDelay.setOnClickListener(this);
+
 
     }
 
@@ -324,38 +226,107 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     @Override
-    public void onConnected(@Nullable Bundle bundle) {
+    public void onClick(View view) {
+        int id= view.getId();
+        switch (id)
+        {
+            case R.id.ib_add_message_delay:
+                    addMessageTime();
+                break;
+
+            case R.id.ib_sub_message_delay:
+                    subMessageTime();
+                break;
+            case R.id.ib_add_last_message_delay:
+                    addLastMessageTime();
+                break;
+            case R.id.ib_sub_last_message_delay:
+                    subLastMessageTime();
+                break;
+            case R.id.ib_template_last_message:
+                    editLastMessageTemplate();
+                break;
+        }
+
 
     }
 
-    @Override
-    public void onConnectionSuspended(int i) {
-        Utils.showToast(this,"Connection Suspended "+i);
+    private void editLastMessageTemplate() {
+
+        AlertDialog.Builder alertDialog = new AlertDialog.Builder(this);
+        alertDialog.setTitle("EDIT");
+        alertDialog.setMessage("Edit the template");
+
+        final EditText input = new EditText(this);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.MATCH_PARENT);
+        input.setLayoutParams(lp);
+        input.setText(tvTemplateLastMessage.getText());
+        alertDialog.setView(input);
+        alertDialog.setIcon(R.drawable.ic_mode_edit_deep_purple);
+
+        alertDialog.setPositiveButton("YES",
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+
+                        if(!input.getText().toString().equals(""))
+                        {
+                            SharedPreferenceUtils.setStringData(MainActivity.this,Config.LAST_MESSAGE_TEMPLATE,input.getText().toString());
+                            tvTemplateLastMessage.setText(input.getText().toString());
+                            dialog.cancel();
+                        }
+                        else
+                            Utils.showToast(MainActivity.this,"Please enter the template");
+
+                    }
+                });
+
+        alertDialog.setNegativeButton("NO",
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                    }
+                });
+
+        alertDialog.show();
     }
 
-    @Override
-    public void onConnectionFailed(@NonNull ConnectionResult result) {
-        if (!result.hasResolution()) {
-
-            // show the localized error dialog.
-            GoogleApiAvailability.getInstance().getErrorDialog(this, result.getErrorCode(), 0).show();
+    private void subLastMessageTime() {
+        int messageDelay = SharedPreferenceUtils.getIntData(this,Config.LAST_MESSAGE_DELAY);
+        messageDelay--;
+        if(messageDelay<1)
             return;
-        }
+        SharedPreferenceUtils.setIntData(this,Config.LAST_MESSAGE_DELAY,messageDelay);
+        tvLastMessageDelay.setText(String.valueOf(messageDelay));
+    }
 
-        /**
-         *  The failure has a resolution. Resolve it.
-         *  Called typically when the app is not yet authorized, and an  authorization
-         *  dialog is displayed to the user.
-         */
+    private void addLastMessageTime() {
+        int messageDelay = SharedPreferenceUtils.getIntData(this,Config.LAST_MESSAGE_DELAY);
+        messageDelay++;
+        if(messageDelay>48)
+            return;
+        SharedPreferenceUtils.setIntData(this,Config.LAST_MESSAGE_DELAY,messageDelay);
+        tvLastMessageDelay.setText(String.valueOf(messageDelay));
+    }
 
-        try {
+    private void subMessageTime() {
+        int messageDelay = SharedPreferenceUtils.getIntData(this,Config.MESSAGE_DELAY);
+        messageDelay--;
+        if(messageDelay<1)
+            return;
+        SharedPreferenceUtils.setIntData(this,Config.MESSAGE_DELAY,messageDelay);
+        tvMessageDelay.setText(String.valueOf(messageDelay));
+    }
 
-            result.startResolutionForResult(this, REQUEST_CODE_RESOLVE_ERR);
+    private void addMessageTime() {
 
-        } catch (IntentSender.SendIntentException e) {
-
-            Log.e(Config.TAG, "Exception while starting resolution activity", e);
-        }
+        int messageDelay = SharedPreferenceUtils.getIntData(this,Config.MESSAGE_DELAY);
+        messageDelay++;
+        if(messageDelay>5)
+            return;
+        SharedPreferenceUtils.setIntData(this,Config.MESSAGE_DELAY,messageDelay);
+        tvMessageDelay.setText(String.valueOf(messageDelay));
     }
 
 
@@ -383,40 +354,14 @@ public class MainActivity extends AppCompatActivity implements
 
     public void doTestFunction(View view) {
 
-       // new DatabaseAsync().execute();
-        String path1 = SharedPreferenceUtils.getStringData(this,Config.Image1Path);
-        String path2 = SharedPreferenceUtils.getStringData(this,Config.Image2Path);
-//        Utils.sendMultipleWhatsappImage(this,path1,path2);
+
     }
 
-    public void sendTestMessage()
-    {
 
-        if(mGoogleApiClient==null)
-        {
-            mGoogleApiClient = new GoogleApiClient.Builder(this)
-                    .addApi(Drive.API)
-                    .addScope(Drive.SCOPE_FILE)
-                    .addConnectionCallbacks(this)
-                    .addOnConnectionFailedListener(this)
-                    .build();
-        }
-        mGoogleApiClient.connect();
-    }
 
     @Override
     protected void onResume() {
         super.onResume();
-        if(mGoogleApiClient==null)
-        {
-            mGoogleApiClient = new GoogleApiClient.Builder(this)
-                    .addApi(Drive.API)
-                    .addScope(Drive.SCOPE_FILE)
-                    .addConnectionCallbacks(this)
-                    .addOnConnectionFailedListener(this)
-                    .build();
-        }
-//        mGoogleApiClient.connect();
 
         if(!WhatsAppAccessbilityService.isAccessibilityOn(this,WhatsAppAccessbilityService.class))
         {
@@ -428,11 +373,7 @@ public class MainActivity extends AppCompatActivity implements
     @Override
     protected void onStop() {
         super.onStop();
-        if(mGoogleApiClient!=null)
-        {
-            mGoogleApiClient.disconnect();
-        }
-        super.onPause();
+
     }
 
     @Override

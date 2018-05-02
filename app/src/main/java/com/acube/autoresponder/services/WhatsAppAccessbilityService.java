@@ -2,14 +2,19 @@ package com.acube.autoresponder.services;
 
 import android.accessibilityservice.AccessibilityService;
 import android.content.Context;
+import android.content.Intent;
 import android.provider.Settings;
 import android.support.v4.view.accessibility.AccessibilityNodeInfoCompat;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 
+import com.acube.autoresponder.Config;
 import com.acube.autoresponder.R;
+import com.acube.autoresponder.activity.MainActivity;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -17,20 +22,26 @@ import java.util.List;
  */
 
 public class WhatsAppAccessbilityService extends AccessibilityService {
+    int childCount = 0;
+
     @Override
     public void onAccessibilityEvent(AccessibilityEvent accessibilityEvent) {
         if(getRootInActiveWindow()==null)
             return;
+
         AccessibilityNodeInfoCompat rootInactiveWindow = AccessibilityNodeInfoCompat.wrap(getRootInActiveWindow());
-        List<AccessibilityNodeInfoCompat> messageNodeList  = rootInactiveWindow.findAccessibilityNodeInfosByViewId("com.whatsapp:id/entry");
-//        if (messageNodeList == null || messageNodeList.isEmpty ()) {
-//            return;
-//        }
-//        AccessibilityNodeInfoCompat messageField = messageNodeList.get (0);
-//        if (messageField.getText () == null || messageField.getText ().length () == 0
-//                || !messageField.getText ().toString ().equalsIgnoreCase (getApplicationContext ().getString (R.string.whatsapp_suffix))) { // So your service doesn't process any message, but the ones ending your apps suffix
-//            return;
-//        }
+
+//        List<AccessibilityNodeInfoCompat> messageNodeList  = rootInactiveWindow.findAccessibilityNodeInfosByViewId("com.whatsapp:id/ok");
+////        if (messageNodeList == null || messageNodeList.isEmpty ()) {
+////            return;
+////        }
+////        AccessibilityNodeInfoCompat messageField = messageNodeList.get (0);
+////        if (messageField.getText () == null || messageField.getText ().length () == 0
+////                || !messageField.getText ().toString ().equalsIgnoreCase (getApplicationContext ().getString (R.string.whatsapp_suffix))) { // So your service doesn't process any message, but the ones ending your apps suffix
+////            return;
+////        }
+        if(rootInactiveWindow.findAccessibilityNodeInfosByViewId ("com.whatsapp:id/send")==null)
+            return;
         List<AccessibilityNodeInfoCompat> sendMessageNodeInfoList = rootInactiveWindow.findAccessibilityNodeInfosByViewId ("com.whatsapp:id/send");
         if (sendMessageNodeInfoList == null || sendMessageNodeInfoList.isEmpty ()) {
             return;
@@ -44,17 +55,21 @@ public class WhatsAppAccessbilityService extends AccessibilityService {
            // hack for certain devices in which the immediate back click is too fast to handle
             performGlobalAction (GLOBAL_ACTION_BACK);
             // same hack as above
-            Thread.sleep (1000);
+            Thread.sleep (2000);
             performGlobalAction (GLOBAL_ACTION_BACK);
-            Thread.sleep (1000);
+            Thread.sleep (2000);
             performGlobalAction (GLOBAL_ACTION_BACK);
-        } catch (InterruptedException ignored) {}
+        }
+        catch (InterruptedException ignored) {}
+
+
 
 
     }
 
     @Override
     public void onInterrupt() {
+        Log.d(Config.TAG,"Interrupt");
 
     }
 
@@ -87,4 +102,8 @@ public class WhatsAppAccessbilityService extends AccessibilityService {
 
         return false;
     }
+
+
+
+
 }

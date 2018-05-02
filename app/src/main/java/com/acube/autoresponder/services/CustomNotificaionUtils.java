@@ -1,10 +1,13 @@
 package com.acube.autoresponder.services;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.service.notification.StatusBarNotification;
 
+import com.acube.autoresponder.Config;
 import com.acube.autoresponder.database.MessageDatabase;
 import com.acube.autoresponder.database.Messages;
+import com.acube.autoresponder.utils.SharedPreferenceUtils;
 import com.acube.autoresponder.utils.Utils;
 
 import java.util.concurrent.Callable;
@@ -40,6 +43,7 @@ public class CustomNotificaionUtils {
 
     public void scheduledReply(final StatusBarNotification scheduledSbn)
     {
+        int messageDelay = SharedPreferenceUtils.getIntData(context,Config.MESSAGE_DELAY);
         ScheduledExecutorService scheduledExecutorService =
                 Executors.newScheduledThreadPool(5);
 
@@ -50,7 +54,7 @@ public class CustomNotificaionUtils {
                                                           return "Called!";
                                                       }
                                                   },
-                        0,
+                        messageDelay,
                         TimeUnit.SECONDS);
     }
 
@@ -66,8 +70,30 @@ public class CustomNotificaionUtils {
             lastMessage.setQueue(0);
             messageDatabase.daoAcess().updateRecord(lastMessage);
 
+
         }
 
+    }
+    public void scheduledLastReply(final StatusBarNotification scheduledSbn)
+    {
+        int lastMessageDelay = SharedPreferenceUtils.getIntData(context,Config.LAST_MESSAGE_DELAY);
+        ScheduledExecutorService scheduledExecutorService =
+                Executors.newScheduledThreadPool(5);
+
+        ScheduledFuture scheduledFuture =
+                scheduledExecutorService.schedule(new Callable() {
+                                                      public Object call() throws Exception {
+                                                          lastReplyNotification(scheduledSbn,Utils.getMobileNumber(scheduledSbn.getTag()));
+                                                          return "Called!";
+                                                      }
+                                                  },
+                        lastMessageDelay,
+                        TimeUnit.HOURS);
+    }
+    public void lastReplyNotification(StatusBarNotification sn, String mobileNumber) {
+        String replyMessage = SharedPreferenceUtils.getStringData(context,Config.LAST_MESSAGE_TEMPLATE);
+            NotificationReplyService.sendReply(sn.getNotification(), context, replyMessage);
 
     }
+
 }
