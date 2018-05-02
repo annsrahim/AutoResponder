@@ -6,18 +6,22 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 
 
+import com.acube.autoresponder.Config;
 import com.acube.autoresponder.R;
 import com.acube.autoresponder.database.MessageDatabase;
 import com.acube.autoresponder.database.TemplateMessages;
+import com.acube.autoresponder.utils.SharedPreferenceUtils;
 import com.acube.autoresponder.utils.Utils;
 
 import java.util.ArrayList;
@@ -43,21 +47,10 @@ public class AddTemplateActivity extends AppCompatActivity implements ITemplateL
         listView = (ListView)findViewById(R.id.list);
         messageDatabase = Utils.getMessageDatabase(this);
 
-//        messageDatabase.daoAcess().insertTemplate(addTemplateMessage("Hai hello"));
-//        messageDatabase.daoAcess().insertTemplate(addTemplateMessage("I am good"));
-//        messageDatabase.daoAcess().insertTemplate(addTemplateMessage("How R u"));
-//        messageDatabase.daoAcess().insertTemplate(addTemplateMessage("All Good"));
-//        messageDatabase.daoAcess().insertTemplate(addTemplateMessage("Do u want to exchange photos"));
-//        messageDatabase.daoAcess().insertTemplate(addTemplateMessage("welcome"));
-//        messageDatabase.daoAcess().insertTemplate(addTemplateMessage("Yes"));
-//        messageDatabase.daoAcess().insertTemplate(addTemplateMessage("Will Come back"));
-//        messageDatabase.daoAcess().insertTemplate(addTemplateMessage("Thanks"));
-
-
-
-
 
         getTemplateMessages();
+
+
 
     }
 
@@ -98,40 +91,6 @@ public class AddTemplateActivity extends AppCompatActivity implements ITemplateL
         getTemplateMessages();
     }
 
-
-//    private void openAddTemplateDialog() {
-//         final AlertDialog alertDialog;
-//        final AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(this);
-//        LayoutInflater inflater = this.getLayoutInflater();
-//        final View dialogView = inflater.inflate(R.layout.dialog_add_template, null);
-//        dialogBuilder.setView(dialogView);
-//        final EditText editText = (EditText) dialogView.findViewById(R.id.ed_template);
-//        dialogBuilder.setNegativeButton("Cancle", new DialogInterface.OnClickListener() {
-//            @Override
-//            public void onClick(DialogInterface dialogInterface, int i) {
-//                dialogInterface.dismiss();
-//            }
-//        });
-//
-//        dialogBuilder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-//            @Override
-//            public void onClick(DialogInterface dialogInterface, int i) {
-//                if(!editText.getText().toString().equals(""))
-//                {
-//                    addTemplate(editText.getText().toString());
-//
-//                }
-//                else
-//                    Utils.showToast(AddTemplateActivity.this,"Please enter the template");
-//            }
-//        });
-//
-//         alertDialog = dialogBuilder.create();
-//
-//
-//        alertDialog.show();
-//
-//    }
 
 
     private void openAddTemplateDialog() {
@@ -254,6 +213,31 @@ public class AddTemplateActivity extends AppCompatActivity implements ITemplateL
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
                             dialogInterface.dismiss();
+                    }
+                }).show();
+
+    }
+    private void refreshListView() {
+        templateListAdapter = new TemplateListAdapter(templateMessagesList,this,this);
+        listView.setAdapter(templateListAdapter);
+    }
+    @Override
+    public void updateImageIndex(final  int pos) {
+        new AlertDialog.Builder(this)
+                .setTitle("Image Schedule")
+                .setMessage("Images will be sent after the selected message")
+                .setIcon(android.R.drawable.ic_dialog_alert)
+                .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        SharedPreferenceUtils.setIntData(AddTemplateActivity.this,Config.IMAGE_INDEX,pos);
+                        refreshListView();
+                        dialog.dismiss();
+                    }})
+                .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        dialogInterface.dismiss();
                     }
                 }).show();
 

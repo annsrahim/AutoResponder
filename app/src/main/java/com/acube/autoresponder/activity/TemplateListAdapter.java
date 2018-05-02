@@ -1,13 +1,13 @@
 package com.acube.autoresponder.activity;
 
 import android.content.Context;
+import android.support.v4.content.ContextCompat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
-import android.widget.Button;
 import android.widget.ImageButton;
-import android.widget.ListView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.acube.autoresponder.R;
@@ -25,11 +25,16 @@ public class TemplateListAdapter extends BaseAdapter {
     private List<TemplateMessages> templateMessagesList;
     private Context context;
     private ITemplateListItemClickListener iTemplateListItemClickListener;
+    private int imageIndex;
 
     public TemplateListAdapter(List<TemplateMessages> templateMessagesList, Context context,ITemplateListItemClickListener iTemplateListItemClickListener) {
         this.templateMessagesList = templateMessagesList;
         this.context = context;
         this.iTemplateListItemClickListener = iTemplateListItemClickListener;
+        if(Utils.getIndexForImage(context)==-1)
+            imageIndex = templateMessagesList.size()-1;
+        else
+            imageIndex = Utils.getIndexForImage(context);
     }
 
     @Override
@@ -55,6 +60,17 @@ public class TemplateListAdapter extends BaseAdapter {
         convertView = inflater.inflate(R.layout.list_template, parent, false);
         TextView tv_list = (TextView)convertView.findViewById(R.id.list_id);
         TextView tv_template = (TextView)convertView.findViewById(R.id.list_message);
+        RelativeLayout rlContainer  = (RelativeLayout)convertView.findViewById(R.id.rl_container);
+        rlContainer.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                iTemplateListItemClickListener.updateImageIndex(position);
+            }
+        });
+
+        if(imageIndex==i)
+            tv_template.setTextColor(ContextCompat.getColor(context,R.color.bg_red));
+
 
         ImageButton imgBtnEdit = (ImageButton)convertView.findViewById(R.id.list_iv_edit);
         ImageButton imgBtnDel = (ImageButton)convertView.findViewById(R.id.list_iv_delete);

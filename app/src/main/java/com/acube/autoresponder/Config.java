@@ -14,6 +14,7 @@ public class Config {
     public static final String Msg= "Msg";
     public static final String TAG= "AUTO RESPONDER LOG";
     public static final String LAST_MESSAGE_TEMPLATE = "LAST_MESSAGE_TEMPLATE";
+    public static final String IMAGE_INDEX = "IMAGE_INDEX";
 
     public static String MyPREFERENCES="AutoResponderPrefs";
     public static String Image1Path = "Image1Path";

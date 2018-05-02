@@ -8,4 +8,5 @@ public interface ITemplateListItemClickListener {
 
     public void onEditItemClick(int itemId,String text,int ordeNo);
     public void onDeleteItemClick(int itemId);
+    public void updateImageIndex(int pos);
 }

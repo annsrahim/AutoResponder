@@ -12,6 +12,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
@@ -177,6 +178,16 @@ public class Utils {
 //        calendar.add(Calendar.MINUTE,10);
         am.set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), pendingIntent);
 
+    }
+
+
+    public static int getIndexForImage(Context context)
+    {
+        SharedPreferences myPrefs;
+        myPrefs = context.getSharedPreferences(Config.MyPREFERENCES, Context.MODE_PRIVATE);
+        MessageDatabase messageDatabase = Utils.getMessageDatabase(context);
+        int templateCount = messageDatabase.daoAcess().getTemplateMessageCount();
+        return myPrefs.getInt(Config.IMAGE_INDEX, templateCount-1);
     }
 
 
