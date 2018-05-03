@@ -73,18 +73,36 @@ public class NotificationService extends NotificationListenerService {
                         int templateMessageCount = messageDatabase.daoAcess().getTemplateMessageCount();
                         if(isNumberAvailable.getStatus()<=templateMessageCount)
                         {
-                            isNumberAvailable.setQueue(1);
-                            customNotificaionUtils.scheduledReply(sbn);
+
+                            int imageIndex = Utils.getIndexForImage(getApplicationContext())+1;
+                            if(isNumberAvailable.getStatus()==imageIndex)
+                            {
+                                isNumberAvailable.setQueue(1);
+                                customNotificaionUtils.isImageTaskAvailable = true;
+                                customNotificaionUtils.scheduledReply(sbn);
+                                String mobileNumber = isNumberAvailable.getContact_number();
+
+                                if(isNumberAvailable.getStatus()==templateMessageCount)
+                                    Utils.sendMultipleWhatsappImage(context,mobileNumber,customNotificaionUtils,sbn,false);
+                                else
+                                    Utils.sendMultipleWhatsappImage(context,mobileNumber,customNotificaionUtils,sbn,true);
+                            }
+                            else
+                            {
+                                isNumberAvailable.setQueue(1);
+                                customNotificaionUtils.isImageTaskAvailable = false;
+                                customNotificaionUtils.scheduledReply(sbn);
+                            }
+
                         }
                         else
                         {
                             if(isNumberAvailable.getStatus()==templateMessageCount+1)
                             {
                                 Log.d(Config.TAG, SharedPreferenceUtils.getStringData(context,Config.Image1Path));
-                                String path1 = SharedPreferenceUtils.getStringData(context,Config.Image1Path);
-                                String path2 = SharedPreferenceUtils.getStringData(context,Config.Image2Path);
-                                String mobileNumber = isNumberAvailable.getContact_number();
-                                Utils.sendMultipleWhatsappImage(context,path1,path2,mobileNumber);
+
+//                                String mobileNumber = isNumberAvailable.getContact_number();
+//                                Utils.sendMultipleWhatsappImage(context,mobileNumber);
                                 customNotificaionUtils.scheduledLastReply(sbn);
                                 isNumberAvailable.setStatus(templateMessageCount+3);
                             }

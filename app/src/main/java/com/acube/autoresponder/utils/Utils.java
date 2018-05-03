@@ -7,41 +7,29 @@ import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.arch.persistence.room.Room;
 import android.content.ComponentName;
-import android.content.ContentResolver;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Build;
-import android.os.Environment;
-import android.os.Parcelable;
-import android.os.PowerManager;
-import android.provider.ContactsContract;
 import android.provider.MediaStore;
 import android.provider.Settings;
+import android.service.notification.StatusBarNotification;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.telephony.PhoneNumberUtils;
-import android.util.Log;
-import android.view.Window;
-import android.view.WindowManager;
 import android.widget.Toast;
 
 import com.acube.autoresponder.Config;
-import com.acube.autoresponder.R;
 import com.acube.autoresponder.database.MessageDatabase;
+import com.acube.autoresponder.services.CustomNotificaionUtils;
 
-import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Calendar;
 
@@ -147,10 +135,11 @@ public class Utils {
         sendIntent.putExtra(Intent.EXTRA_TEXT,"sample text you want to send along with the image");
         context.startActivity(sendIntent);
     }
-    public static void sendMultipleWhatsappImage(Context context,String path1,String path2,String mobNumber)
+    public static void sendMultipleWhatsappImage(Context context, String mobNumber, CustomNotificaionUtils customNotificaionUtils, StatusBarNotification sbn, boolean isNextMessageAvailable)
     {
 
-
+        String path1 = SharedPreferenceUtils.getStringData(context,Config.Image1Path);
+        String path2 = SharedPreferenceUtils.getStringData(context,Config.Image2Path);
         Intent intent = new Intent();
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         intent.setAction(Intent.ACTION_SEND_MULTIPLE);
@@ -172,11 +161,19 @@ public class Utils {
 
 
         int messageDelay  = SharedPreferenceUtils.getIntData(context,Config.MESSAGE_DELAY);
+        messageDelay+=messageDelay;
         PendingIntent pendingIntent = PendingIntent.getActivity(context,444,intent,PendingIntent.FLAG_UPDATE_CURRENT);
+
         AlarmManager am = (AlarmManager) context.getSystemService(Activity.ALARM_SERVICE);
         Calendar calendar = Calendar.getInstance();
-//        calendar.add(Calendar.MINUTE,10);
+        calendar.add(Calendar.MINUTE,messageDelay);
         am.set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), pendingIntent);
+
+        if(isNextMessageAvailable)
+        {
+            customNotificaionUtils.scheduleReplyAfterImage(sbn);
+        }
+
 
     }
 

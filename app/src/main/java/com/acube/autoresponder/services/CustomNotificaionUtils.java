@@ -24,6 +24,7 @@ public class CustomNotificaionUtils {
 
     MessageDatabase messageDatabase;
     Context context;
+    public   boolean isImageTaskAvailable = false;
 
     public CustomNotificaionUtils(MessageDatabase messageDatabase, Context context) {
         this.messageDatabase = messageDatabase;
@@ -55,6 +56,26 @@ public class CustomNotificaionUtils {
                                                       }
                                                   },
                         messageDelay,
+                        TimeUnit.MINUTES);
+    }
+
+    public void scheduleReplyAfterImage(final StatusBarNotification scheduledSbn)
+    {
+        int messageDelay = SharedPreferenceUtils.getIntData(context,Config.MESSAGE_DELAY);
+        messageDelay += 1;
+        messageDelay *= 60;
+        messageDelay += 30;
+        ScheduledExecutorService scheduledExecutorService =
+                Executors.newScheduledThreadPool(5);
+
+        ScheduledFuture scheduledFuture =
+                scheduledExecutorService.schedule(new Callable() {
+                                                      public Object call() throws Exception {
+                                                          replyTextAfterImage(scheduledSbn,Utils.getMobileNumber(scheduledSbn.getTag()));
+                                                          return "Called!";
+                                                      }
+                                                  },
+                        messageDelay,
                         TimeUnit.SECONDS);
     }
 
@@ -67,11 +88,31 @@ public class CustomNotificaionUtils {
             replyMessage = messageDatabase.daoAcess().getTemplateByOrderNo(status);
             NotificationReplyService.sendReply(sn.getNotification(), context, replyMessage);
             lastMessage.setStatus(status+1);
-            lastMessage.setQueue(0);
+            if(isImageTaskAvailable)
+                lastMessage.setQueue(1);
+            else
+                lastMessage.setQueue(0);
             messageDatabase.daoAcess().updateRecord(lastMessage);
 
 
         }
+
+
+    }
+    public void replyTextAfterImage(StatusBarNotification sn, String mobileNumber) {
+        String replyMessage = "Hi Hello";
+        Messages lastMessage = messageDatabase.daoAcess().getMessage(mobileNumber);
+        if (lastMessage != null) {
+            int status = lastMessage.getStatus();
+            replyMessage = messageDatabase.daoAcess().getTemplateByOrderNo(status);
+            NotificationReplyService.sendReply(sn.getNotification(), context, replyMessage);
+            lastMessage.setStatus(status+1);
+                lastMessage.setQueue(0);
+            messageDatabase.daoAcess().updateRecord(lastMessage);
+
+
+        }
+
 
     }
     public void scheduledLastReply(final StatusBarNotification scheduledSbn)
