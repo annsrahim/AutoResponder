@@ -25,6 +25,9 @@ public class CustomNotificaionUtils {
     MessageDatabase messageDatabase;
     Context context;
     public   boolean isImageTaskAvailable = false;
+    StatusBarNotification scheduledSbn;
+
+
 
     public CustomNotificaionUtils(MessageDatabase messageDatabase, Context context) {
         this.messageDatabase = messageDatabase;
@@ -35,7 +38,8 @@ public class CustomNotificaionUtils {
     public boolean isNotificationRepeated(StatusBarNotification sbn) {
         boolean isNewNotification;
         MessageDatabase messageDatabase = Utils.getMessageDatabase(context);
-        Messages check = messageDatabase.daoAcess().checkMessageExists(sbn.getNotification().when);
+        String number = Utils.getMobileNumber(sbn.getTag());
+        Messages check = messageDatabase.daoAcess().checkMessageExists(sbn.getNotification().when,number);
         isNewNotification = check == null;
         return isNewNotification;
     }
@@ -46,7 +50,7 @@ public class CustomNotificaionUtils {
     {
         int messageDelay = SharedPreferenceUtils.getIntData(context,Config.MESSAGE_DELAY);
         ScheduledExecutorService scheduledExecutorService =
-                Executors.newScheduledThreadPool(5);
+                Executors.newScheduledThreadPool(100);
 
         ScheduledFuture scheduledFuture =
                 scheduledExecutorService.schedule(new Callable() {
@@ -56,17 +60,17 @@ public class CustomNotificaionUtils {
                                                       }
                                                   },
                         messageDelay,
-                        TimeUnit.MINUTES);
+                        TimeUnit.SECONDS);
     }
 
     public void scheduleReplyAfterImage(final StatusBarNotification scheduledSbn)
     {
         int messageDelay = SharedPreferenceUtils.getIntData(context,Config.MESSAGE_DELAY);
-        messageDelay += 1;
-        messageDelay *= 60;
-        messageDelay += 30;
+//        messageDelay += 1;
+//        messageDelay *= 60;
+//        messageDelay += 30;
         ScheduledExecutorService scheduledExecutorService =
-                Executors.newScheduledThreadPool(5);
+                Executors.newScheduledThreadPool(10);
 
         ScheduledFuture scheduledFuture =
                 scheduledExecutorService.schedule(new Callable() {
@@ -75,8 +79,9 @@ public class CustomNotificaionUtils {
                                                           return "Called!";
                                                       }
                                                   },
-                        messageDelay,
+                        10,
                         TimeUnit.SECONDS);
+        scheduledExecutorService.shutdown();
     }
 
 
@@ -88,10 +93,11 @@ public class CustomNotificaionUtils {
             replyMessage = messageDatabase.daoAcess().getTemplateByOrderNo(status);
             NotificationReplyService.sendReply(sn.getNotification(), context, replyMessage);
             lastMessage.setStatus(status+1);
-            if(isImageTaskAvailable)
-                lastMessage.setQueue(1);
-            else
+//            if(isImageTaskAvailable)
+//                lastMessage.setQueue(1);
+//            else
                 lastMessage.setQueue(0);
+                lastMessage.setImageStatus(false);
             messageDatabase.daoAcess().updateRecord(lastMessage);
 
 
@@ -104,7 +110,7 @@ public class CustomNotificaionUtils {
         Messages lastMessage = messageDatabase.daoAcess().getMessage(mobileNumber);
         if (lastMessage != null) {
             int status = lastMessage.getStatus();
-            replyMessage = messageDatabase.daoAcess().getTemplateByOrderNo(status);
+            replyMessage = messageDatabase.daoAcess().getTemplateByOrderNo(status)+mobileNumber;
             NotificationReplyService.sendReply(sn.getNotification(), context, replyMessage);
             lastMessage.setStatus(status+1);
                 lastMessage.setQueue(0);
@@ -136,5 +142,6 @@ public class CustomNotificaionUtils {
             NotificationReplyService.sendReply(sn.getNotification(), context, replyMessage);
 
     }
+
 
 }

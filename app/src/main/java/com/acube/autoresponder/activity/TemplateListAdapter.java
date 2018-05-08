@@ -61,7 +61,8 @@ public class TemplateListAdapter extends BaseAdapter {
         TextView tv_list = (TextView)convertView.findViewById(R.id.list_id);
         TextView tv_template = (TextView)convertView.findViewById(R.id.list_message);
         RelativeLayout rlContainer  = (RelativeLayout)convertView.findViewById(R.id.rl_container);
-        rlContainer.setOnClickListener(new View.OnClickListener() {
+        rlContainer
+                .setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 iTemplateListItemClickListener.updateImageIndex(position);

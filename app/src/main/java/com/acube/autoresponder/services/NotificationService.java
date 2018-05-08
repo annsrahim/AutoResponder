@@ -3,6 +3,7 @@ package com.acube.autoresponder.services;
 import android.arch.persistence.room.Room;
 import android.content.Context;
 import android.os.Bundle;
+import android.os.Handler;
 import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
 import android.util.Log;
@@ -13,6 +14,13 @@ import com.acube.autoresponder.database.Messages;
 import com.acube.autoresponder.utils.SharedPreferenceUtils;
 import com.acube.autoresponder.utils.Utils;
 
+import java.util.ArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
 /**
  * Created by Anns on 23/03/18.
  */
@@ -21,6 +29,10 @@ public class NotificationService extends NotificationListenerService {
     Context context;
     MessageDatabase messageDatabase;
     CustomNotificaionUtils customNotificaionUtils;
+    Handler handler = new Handler();
+    ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(5);
+
+
 
     @Override
     public void onCreate() {
@@ -35,13 +47,45 @@ public class NotificationService extends NotificationListenerService {
 
         if(sbn.getTag()!=null && sbn.getPackageName().equalsIgnoreCase("com.whatsapp"))
         {
-            parseNotification(sbn);
+            if(customNotificaionUtils.isNotificationRepeated(sbn)) //Check Whether old notification is repeating
+            {
+                addNotificationInDb(sbn);
+            }
+           Log.d("Noti Count ====",Utils.notificationLogs.size()+" Count");
+           //parseNotification(sbn);
+        }
+
+
+    }
+    private void addNotificationInDb(StatusBarNotification sbn)
+    {
+
+        Messages messages = new Messages();
+        messages.setContact_number(Utils.getMobileNumber(sbn.getTag()));
+        Bundle extras = sbn.getNotification().extras;
+        String text = extras.getCharSequence("android.text").toString();
+        messages.setMessage_text(text);
+        messages.setMessage_time(sbn.getNotification().when);
+        messages.setQueue(0);
+        messages.setStatus(1);
+        final Messages isNumberAvailable = messageDatabase.daoAcess().getMessage(Utils.getMobileNumber(sbn.getTag()));
+        if(isNumberAvailable==null)
+        {
+
+            messageDatabase.daoAcess().insertOnlySingleRecord(messages);
+            NotificationLog log = new NotificationLog(Utils.getMobileNumber(sbn.getTag()),sbn,0);
+            Utils.notificationLogs.add(log);
+        }
+        else
+        {
+            Utils.updateReplyStatus(context,isNumberAvailable.getContact_number());
         }
 
 
     }
 
     private void parseNotification(final StatusBarNotification sbn) {
+        Log.d("t______",sbn.getId()+" : ID");
         Messages messages = new Messages();
         messages.setContact_number(Utils.getMobileNumber(sbn.getTag()));
         Bundle extras = sbn.getNotification().extras;
@@ -56,13 +100,51 @@ public class NotificationService extends NotificationListenerService {
 
             if(customNotificaionUtils.isNotificationRepeated(sbn)) //Check Whether old notification is repeating
             {
-                Messages isNumberAvailable = messageDatabase.daoAcess().getMessage(Utils.getMobileNumber(sbn.getTag()));
+                final Messages isNumberAvailable = messageDatabase.daoAcess().getMessage(Utils.getMobileNumber(sbn.getTag()));
                 if(isNumberAvailable==null)
                 {
 
                     messageDatabase.daoAcess().insertOnlySingleRecord(messages);
-                    customNotificaionUtils.scheduledReply(sbn);
+                    ReplyTask replyTask = new ReplyTask(context,sbn);
+                    scheduledExecutorService.schedule(replyTask,5, TimeUnit.SECONDS);
+
+
                 }
+                else if(isNumberAvailable.isImageStatus())
+                {
+                    int templateMessageCount = messageDatabase.daoAcess().getTemplateMessageCount();
+                    isNumberAvailable.setImageStatus(false);
+                    isNumberAvailable.setQueue(1);
+                    messageDatabase.daoAcess().updateRecord(isNumberAvailable);
+                    String mobileNumber = isNumberAvailable.getContact_number();
+                    final boolean isNextMessageAvailbale;
+                    isNextMessageAvailbale = isNumberAvailable.getStatus() != templateMessageCount;
+//                    SendImages sendImages  = new SendImages(context,customNotificaionUtils,sbn,isNextMessageAvailbale,mobileNumber);
+//                    handler.postDelayed(sendImages,5000);
+                    final Runnable afterExe = new Runnable() {
+                        @Override
+                        public void run() {
+                            if(isNextMessageAvailbale)
+                            {
+                                ReplyTask replyTask = new ReplyTask(context,sbn);
+                                scheduledExecutorService.schedule(replyTask,2, TimeUnit.SECONDS);
+                            }
+
+                        }
+                    };
+                    handler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            Utils.sendWhatsappImage(context,isNumberAvailable.getContact_number(),customNotificaionUtils,sbn,isNextMessageAvailbale);
+//                            handler.postDelayed(afterExe,0);
+                        }
+                    },5000);
+
+
+
+
+                }
+
                 else
                 {
                     isNumberAvailable.setMessage_text(text);
@@ -78,20 +160,26 @@ public class NotificationService extends NotificationListenerService {
                             if(isNumberAvailable.getStatus()==imageIndex)
                             {
                                 isNumberAvailable.setQueue(1);
-                                customNotificaionUtils.isImageTaskAvailable = true;
-                                customNotificaionUtils.scheduledReply(sbn);
-                                String mobileNumber = isNumberAvailable.getContact_number();
+                                isNumberAvailable.setImageStatus(true);
+                                ReplyTask replyTask = new ReplyTask(context,sbn);
+                                scheduledExecutorService.schedule(replyTask,5, TimeUnit.SECONDS);
 
-                                if(isNumberAvailable.getStatus()==templateMessageCount)
-                                    Utils.sendMultipleWhatsappImage(context,mobileNumber,customNotificaionUtils,sbn,false);
-                                else
-                                    Utils.sendMultipleWhatsappImage(context,mobileNumber,customNotificaionUtils,sbn,true);
+//                                customNotificaionUtils.isImageTaskAvailable = true;
+//                                customNotificaionUtils.scheduledReply(sbn);
+                                String mobileNumber = isNumberAvailable.getContact_number();
+                                boolean isNextMessageAvailbale;
+//                                    Utils.sendMultipleWhatsappImage(context,mobileNumber,customNotificaionUtils,sbn,false);
+                                isNextMessageAvailbale = isNumberAvailable.getStatus() != templateMessageCount;
+//                                SendImages sendImages  = new SendImages(context,customNotificaionUtils,sbn,isNextMessageAvailbale,mobileNumber);
+//                                handler.postDelayed(sendImages,5000);
+
                             }
                             else
                             {
                                 isNumberAvailable.setQueue(1);
-                                customNotificaionUtils.isImageTaskAvailable = false;
-                                customNotificaionUtils.scheduledReply(sbn);
+                                isNumberAvailable.setImageStatus(false);
+                                ReplyTask replyTask = new ReplyTask(context,sbn);
+                                scheduledExecutorService.schedule(replyTask,5, TimeUnit.SECONDS);
                             }
 
                         }
@@ -142,6 +230,6 @@ public class NotificationService extends NotificationListenerService {
 
     @Override
     public void onNotificationRemoved(StatusBarNotification sbn) {
-        Log.i("Msg","Notification Removed");
+
     }
 }

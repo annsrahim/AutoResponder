@@ -8,6 +8,7 @@ import android.app.PendingIntent;
 import android.arch.persistence.room.Room;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.ContextWrapper;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -15,6 +16,7 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Message;
 import android.provider.MediaStore;
 import android.provider.Settings;
 import android.service.notification.StatusBarNotification;
@@ -26,7 +28,9 @@ import android.widget.Toast;
 
 import com.acube.autoresponder.Config;
 import com.acube.autoresponder.database.MessageDatabase;
+import com.acube.autoresponder.database.Messages;
 import com.acube.autoresponder.services.CustomNotificaionUtils;
+import com.acube.autoresponder.services.NotificationLog;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -38,6 +42,38 @@ import java.util.Calendar;
  */
 
 public class Utils {
+    public static ArrayList<NotificationLog> notificationLogs = new ArrayList<>();
+
+    public static StatusBarNotification getStatusNotification(String number)
+    {
+        for(NotificationLog notificationLog:notificationLogs)
+        {
+            if(number.equalsIgnoreCase(notificationLog.contactNumber))
+                return notificationLog.statusBarNotification;
+        }
+        return null;
+    }
+    public static int getReplyStatus(String number)
+    {
+        for(NotificationLog notificationLog:notificationLogs)
+        {
+            if(number.equalsIgnoreCase(notificationLog.contactNumber))
+                return notificationLog.replyStatus;
+        }
+        return -1;
+    }
+
+    public static void updateReplyStatus(Context context,String number)
+    {
+        MessageDatabase messageDatabase = getMessageDatabase(context);
+        Messages message = messageDatabase.daoAcess().getMessage(number);
+        for(NotificationLog notificationLog:notificationLogs)
+        {
+            if(number.equalsIgnoreCase(notificationLog.contactNumber))
+                notificationLog.replyStatus = message.getQueue();
+        }
+    }
+
     public static boolean notificationAccessStatus(Context context)
     {
         String enabledListeners = "";
@@ -62,7 +98,10 @@ public class Utils {
     }
     public static MessageDatabase getMessageDatabase(Context context)
     {
-       return Room.databaseBuilder(context,MessageDatabase.class,"auto-respond").allowMainThreadQueries().build();
+       return Room.databaseBuilder(context,MessageDatabase.class,"auto-respond")
+               .allowMainThreadQueries()
+               .fallbackToDestructiveMigration()
+               .build();
     }
 
     public static void showAlert(Context context,String title,String msg)
@@ -177,7 +216,42 @@ public class Utils {
 
     }
 
+    public static void sendWhatsappImage(Context context, String mobNumber, CustomNotificaionUtils customNotificaionUtils, StatusBarNotification sbn, boolean isNextMessageAvailable)
+    {
 
+        String path1 = SharedPreferenceUtils.getStringData(context,Config.Image1Path);
+        String path2 = SharedPreferenceUtils.getStringData(context,Config.Image2Path);
+        Intent intent = new Intent();
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        intent.setAction(Intent.ACTION_SEND_MULTIPLE);
+        intent.putExtra(Intent.EXTRA_SUBJECT, "Here are some files.");
+        intent.setType("text/plain");
+        intent.setType("image/jpeg"); /* This example is sharing jpeg images. */
+        intent.setComponent(new ComponentName("com.whatsapp","com.whatsapp.ContactPicker"));
+        ArrayList<Uri> files = new ArrayList<Uri>();
+        Uri uri1 = Uri.parse(path1);
+        Uri uri2 = Uri.parse(path2);
+        files.add(uri1);
+        files.add(uri2);
+
+//        intent.putExtra(Intent.EXTRA_TEXT, "Text caption message!!");
+        intent.setType("text/plain");
+        intent.setType("image/jpeg");
+        intent.putExtra("jid", PhoneNumberUtils.stripSeparators(mobNumber)+"@s.whatsapp.net");
+        intent.putParcelableArrayListExtra(Intent.EXTRA_STREAM,files);
+
+
+        int messageDelay  = SharedPreferenceUtils.getIntData(context,Config.MESSAGE_DELAY);
+        messageDelay+=messageDelay;
+
+
+//        if(isNextMessageAvailable)
+//        {
+//            customNotificaionUtils.scheduleReplyAfterImage(sbn);
+//        }
+        context.startActivity(intent);
+
+    }
     public static int getIndexForImage(Context context)
     {
         SharedPreferences myPrefs;

@@ -52,15 +52,16 @@ public class WhatsAppAccessbilityService extends AccessibilityService {
         }
         sendMessageButton.performAction (AccessibilityNodeInfo.ACTION_CLICK);
         try {
-           // hack for certain devices in which the immediate back click is too fast to handle
-            performGlobalAction (GLOBAL_ACTION_BACK);
-            // same hack as above
-            Thread.sleep (2000);
             performGlobalAction (GLOBAL_ACTION_BACK);
             Thread.sleep (2000);
             performGlobalAction (GLOBAL_ACTION_BACK);
+            Thread.sleep (2000);
+            performGlobalAction (GLOBAL_ACTION_BACK);
+
+
         }
         catch (InterruptedException ignored) {}
+
 
 
 

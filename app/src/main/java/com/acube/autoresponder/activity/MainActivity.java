@@ -61,6 +61,8 @@ import com.acube.autoresponder.Config;
 import com.acube.autoresponder.R;
 import com.acube.autoresponder.database.MessageDatabase;
 import com.acube.autoresponder.database.Messages;
+import com.acube.autoresponder.services.NotificationService;
+import com.acube.autoresponder.services.ReplyTask;
 import com.acube.autoresponder.services.WhatsAppAccessbilityService;
 import com.acube.autoresponder.utils.SharedPreferenceUtils;
 import com.acube.autoresponder.utils.Utils;
@@ -79,9 +81,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 
@@ -104,6 +108,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     Bitmap bmpImage1,bmpImage2;
     TextView tvMessageDelay,tvLastMessageDelay,tvTemplateLastMessage;
     ImageButton ibAddMessageDelay,ibSubMessageDelay,ibLastAddMessageDelay,ibLastSubMessageDelay,ibTemplateLastMessage;
+    ScheduledThreadPoolExecutor scheduledThreadPoolExecutor  = new ScheduledThreadPoolExecutor(2);
 
 
     @SuppressLint("ClickableViewAccessibility")
@@ -211,6 +216,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void clearDB(View view) {
         try{
             messageDatabase.daoAcess().clearDatabase();
+            Utils.notificationLogs.clear();
         }
         catch (Exception e)
         {
@@ -362,7 +368,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     protected void onResume() {
         super.onResume();
-
+        scheduledThreadPoolExecutor.scheduleWithFixedDelay(checkAndReply,2,5,TimeUnit.SECONDS);
         if(!WhatsAppAccessbilityService.isAccessibilityOn(this,WhatsAppAccessbilityService.class))
         {
             Intent intent = new Intent (Settings.ACTION_ACCESSIBILITY_SETTINGS);
@@ -511,6 +517,64 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     }
 
+    public Runnable checkAndReply = new Runnable() {
+        @Override
+        public void run() {
+            checkForReplyMessages();
+        }
+    };
+
+
+    public void checkForReplyMessages()
+    {
+        List<Messages> messagesList = messageDatabase.daoAcess().getAllMessages();
+        int templateMessagesCount = messageDatabase.daoAcess().getTemplateMessageCount();
+        for(Messages message: messagesList)
+        {
+            if(message.getQueue()==0)
+            {
+                if(message.getStatus()<=templateMessagesCount)
+                {
+                    StatusBarNotification sbn = Utils.getStatusNotification(message.getContact_number());
+                    int replyStatus = Utils.getReplyStatus(message.getContact_number());
+                    int imageIndex = Utils.getIndexForImage(getApplicationContext())+1;
+                    if(replyStatus==0)
+                    {
+                        if(message.isImageStatus())
+                        {
+                            Log.d("Sending Image","True");
+                            message.setImageStatus(false);
+                            message.setQueue(1);
+                            messageDatabase.daoAcess().updateRecord(message);
+                            sendImageReply(message,templateMessagesCount);
+                            return;
+                        }
+                        else
+                        {
+                            Log.d("Sending Image","False");
+                            if(message.getStatus()==imageIndex)
+                                message.setImageStatus(true);
+                            ReplyTask replyTask = new ReplyTask(this,sbn);
+                            message.setQueue(1);
+                            messageDatabase.daoAcess().updateRecord(message);
+                            Utils.updateReplyStatus(this,message.getContact_number());
+                            scheduledThreadPoolExecutor.schedule(replyTask,10, TimeUnit.SECONDS);
+                        }
+
+
+                    }
+
+                }
+            }
+            Log.d("T_____",message.getContact_number()+" "+message.getStatus());
+        }
+    }
+
+    private void sendImageReply(Messages message, int templateMessagesCount) {
+        String mobileNumber = message.getContact_number();
+        final boolean isNextMessageAvailbale;
+        isNextMessageAvailbale = message.getStatus() != templateMessagesCount;
+    }
 
 
 }

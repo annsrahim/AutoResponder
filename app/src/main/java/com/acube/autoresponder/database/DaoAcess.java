@@ -20,8 +20,8 @@ public interface DaoAcess {
     @Insert
     void insertTemplate(TemplateMessages templateMessages);
 
-    @Query("SELECT * FROM Messages WHERE message_time =:msgTime")
-    Messages checkMessageExists(long msgTime);
+    @Query("SELECT * FROM Messages WHERE message_time =:msgTime AND contact_number =:cNumber")
+    Messages checkMessageExists(long msgTime,String cNumber);
 
     @Query("SELECT * FROM MESSAGES ORDER BY id DESC")
     List<Messages> getAllMessages();
