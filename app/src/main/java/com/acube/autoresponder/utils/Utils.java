@@ -72,6 +72,15 @@ public class Utils {
             if(number.equalsIgnoreCase(notificationLog.contactNumber))
                 notificationLog.replyStatus = message.getQueue();
         }
+        messageDatabase.close();
+    }
+    public static void updateStatusBarNotification(String number,StatusBarNotification sbn)
+    {
+        for(NotificationLog notificationLog:notificationLogs)
+        {
+            if(number.equalsIgnoreCase(notificationLog.contactNumber))
+                notificationLog.statusBarNotification = sbn;
+        }
     }
 
     public static boolean notificationAccessStatus(Context context)
@@ -161,94 +170,88 @@ public class Utils {
     }
 
 
-    public static void sendWhatsappImage(Context context,String path)
-    {
-        Intent sendIntent = new Intent("android.intent.action.SEND");
-        sendIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        File f=new File("path to the file");
-        Uri uri = Uri.parse(path);
-        sendIntent.setComponent(new ComponentName("com.whatsapp","com.whatsapp.ContactPicker"));
-        sendIntent.setType("image");
-        sendIntent.putExtra(Intent.EXTRA_STREAM,uri);
-        sendIntent.putExtra("jid", PhoneNumberUtils.stripSeparators("918197713454")+"@s.whatsapp.net");
-        sendIntent.putExtra(Intent.EXTRA_TEXT,"sample text you want to send along with the image");
-        context.startActivity(sendIntent);
-    }
-    public static void sendMultipleWhatsappImage(Context context, String mobNumber, CustomNotificaionUtils customNotificaionUtils, StatusBarNotification sbn, boolean isNextMessageAvailable)
-    {
-
-        String path1 = SharedPreferenceUtils.getStringData(context,Config.Image1Path);
-        String path2 = SharedPreferenceUtils.getStringData(context,Config.Image2Path);
-        Intent intent = new Intent();
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        intent.setAction(Intent.ACTION_SEND_MULTIPLE);
-        intent.putExtra(Intent.EXTRA_SUBJECT, "Here are some files.");
-        intent.setType("text/plain");
-        intent.setType("image/jpeg"); /* This example is sharing jpeg images. */
-        intent.setComponent(new ComponentName("com.whatsapp","com.whatsapp.ContactPicker"));
-        ArrayList<Uri> files = new ArrayList<Uri>();
-        Uri uri1 = Uri.parse(path1);
-        Uri uri2 = Uri.parse(path2);
-        files.add(uri1);
-        files.add(uri2);
-
-//        intent.putExtra(Intent.EXTRA_TEXT, "Text caption message!!");
-        intent.setType("text/plain");
-        intent.setType("image/jpeg");
-        intent.putExtra("jid", PhoneNumberUtils.stripSeparators(mobNumber)+"@s.whatsapp.net");
-        intent.putParcelableArrayListExtra(Intent.EXTRA_STREAM,files);
-
-
-        int messageDelay  = SharedPreferenceUtils.getIntData(context,Config.MESSAGE_DELAY);
-        messageDelay+=messageDelay;
-        PendingIntent pendingIntent = PendingIntent.getActivity(context,444,intent,PendingIntent.FLAG_UPDATE_CURRENT);
-
-        AlarmManager am = (AlarmManager) context.getSystemService(Activity.ALARM_SERVICE);
-        Calendar calendar = Calendar.getInstance();
-        calendar.add(Calendar.MINUTE,messageDelay);
-        am.set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), pendingIntent);
-
-        if(isNextMessageAvailable)
-        {
-            customNotificaionUtils.scheduleReplyAfterImage(sbn);
-        }
-
-
-    }
-
-    public static void sendWhatsappImage(Context context, String mobNumber, CustomNotificaionUtils customNotificaionUtils, StatusBarNotification sbn, boolean isNextMessageAvailable)
-    {
-
-        String path1 = SharedPreferenceUtils.getStringData(context,Config.Image1Path);
-        String path2 = SharedPreferenceUtils.getStringData(context,Config.Image2Path);
-        Intent intent = new Intent();
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        intent.setAction(Intent.ACTION_SEND_MULTIPLE);
-        intent.putExtra(Intent.EXTRA_SUBJECT, "Here are some files.");
-        intent.setType("text/plain");
-        intent.setType("image/jpeg"); /* This example is sharing jpeg images. */
-        intent.setComponent(new ComponentName("com.whatsapp","com.whatsapp.ContactPicker"));
-        ArrayList<Uri> files = new ArrayList<Uri>();
-        Uri uri1 = Uri.parse(path1);
-        Uri uri2 = Uri.parse(path2);
-        files.add(uri1);
-        files.add(uri2);
-
-//        intent.putExtra(Intent.EXTRA_TEXT, "Text caption message!!");
-        intent.setType("text/plain");
-        intent.setType("image/jpeg");
-        intent.putExtra("jid", PhoneNumberUtils.stripSeparators(mobNumber)+"@s.whatsapp.net");
-        intent.putParcelableArrayListExtra(Intent.EXTRA_STREAM,files);
-
-
-        int messageDelay  = SharedPreferenceUtils.getIntData(context,Config.MESSAGE_DELAY);
-        messageDelay+=messageDelay;
-
-
+//    public static void sendWhatsappImage(Context context,String path)
+//    {
+//        Intent sendIntent = new Intent("android.intent.action.SEND");
+//        sendIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+//        File f=new File("path to the file");
+//        Uri uri = Uri.parse(path);
+//        sendIntent.setComponent(new ComponentName("com.whatsapp","com.whatsapp.ContactPicker"));
+//        sendIntent.setType("image");
+//        sendIntent.putExtra(Intent.EXTRA_STREAM,uri);
+//        sendIntent.putExtra("jid", PhoneNumberUtils.stripSeparators("918197713454")+"@s.whatsapp.net");
+//        sendIntent.putExtra(Intent.EXTRA_TEXT,"sample text you want to send along with the image");
+//        context.startActivity(sendIntent);
+//    }
+//    public static void sendMultipleWhatsappImage(Context context, String mobNumber, CustomNotificaionUtils customNotificaionUtils, StatusBarNotification sbn, boolean isNextMessageAvailable)
+//    {
+//
+//        String path1 = SharedPreferenceUtils.getStringData(context,Config.Image1Path);
+//        String path2 = SharedPreferenceUtils.getStringData(context,Config.Image2Path);
+//        Intent intent = new Intent();
+//        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+//        intent.setAction(Intent.ACTION_SEND_MULTIPLE);
+//        intent.putExtra(Intent.EXTRA_SUBJECT, "Here are some files.");
+//        intent.setType("text/plain");
+//        intent.setType("image/jpeg"); /* This example is sharing jpeg images. */
+//        intent.setComponent(new ComponentName("com.whatsapp","com.whatsapp.ContactPicker"));
+//        ArrayList<Uri> files = new ArrayList<Uri>();
+//        Uri uri1 = Uri.parse(path1);
+//        Uri uri2 = Uri.parse(path2);
+//        files.add(uri1);
+//        files.add(uri2);
+//
+////        intent.putExtra(Intent.EXTRA_TEXT, "Text caption message!!");
+//        intent.setType("text/plain");
+//        intent.setType("image/jpeg");
+//        intent.putExtra("jid", PhoneNumberUtils.stripSeparators(mobNumber)+"@s.whatsapp.net");
+//        intent.putParcelableArrayListExtra(Intent.EXTRA_STREAM,files);
+//
+//
+//        int messageDelay  = SharedPreferenceUtils.getIntData(context,Config.MESSAGE_DELAY);
+//        messageDelay+=messageDelay;
+//        PendingIntent pendingIntent = PendingIntent.getActivity(context,444,intent,PendingIntent.FLAG_UPDATE_CURRENT);
+//
+//        AlarmManager am = (AlarmManager) context.getSystemService(Activity.ALARM_SERVICE);
+//        Calendar calendar = Calendar.getInstance();
+//        calendar.add(Calendar.MINUTE,messageDelay);
+//        am.set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), pendingIntent);
+//
 //        if(isNextMessageAvailable)
 //        {
 //            customNotificaionUtils.scheduleReplyAfterImage(sbn);
 //        }
+//
+//
+//    }
+
+    public static void sendWhatsappImage(Context context,String mobNumber)
+    {
+
+        String path1 = SharedPreferenceUtils.getStringData(context,Config.Image1Path);
+        String path2 = SharedPreferenceUtils.getStringData(context,Config.Image2Path);
+        Intent intent = new Intent();
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        intent.setAction(Intent.ACTION_SEND_MULTIPLE);
+        intent.putExtra(Intent.EXTRA_SUBJECT, "Here are some files.");
+        intent.setType("text/plain");
+        intent.setType("image/jpeg"); /* This example is sharing jpeg images. */
+        intent.setComponent(new ComponentName("com.whatsapp","com.whatsapp.ContactPicker"));
+        ArrayList<Uri> files = new ArrayList<Uri>();
+        Uri uri1 = Uri.parse(path1);
+        Uri uri2 = Uri.parse(path2);
+        files.add(uri1);
+        files.add(uri2);
+
+//        intent.putExtra(Intent.EXTRA_TEXT, "Text caption message!!");
+        intent.setType("text/plain");
+        intent.setType("image/jpeg");
+        intent.putExtra("jid", PhoneNumberUtils.stripSeparators(mobNumber)+"@s.whatsapp.net");
+        intent.putParcelableArrayListExtra(Intent.EXTRA_STREAM,files);
+
+
+        int messageDelay  = SharedPreferenceUtils.getIntData(context,Config.MESSAGE_DELAY);
+
         context.startActivity(intent);
 
     }

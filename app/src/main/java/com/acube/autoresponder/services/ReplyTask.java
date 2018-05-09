@@ -41,13 +41,15 @@ public class ReplyTask implements Runnable {
 
         {
             int status = lastMessage.getStatus();
-            replyMessage = messageDatabase.daoAcess().getTemplateByOrderNo(status)+mobileNumber;
+            replyMessage = messageDatabase.daoAcess().getTemplateByOrderNo(status);
             NotificationReplyService.sendReply(statusBarNotification.getNotification(), context, replyMessage);
             lastMessage.setStatus(status + 1);
             lastMessage.setQueue(0);
             messageDatabase.daoAcess().updateRecord(lastMessage);
+            messageDatabase.close();
 
         }
+        messageDatabase.close();
 
 
     }

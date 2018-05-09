@@ -27,7 +27,7 @@ public class Messages {
     private String message_text;
     private long message_time;
     private int status;
-    private boolean imageStatus = false;
+    private int imageStatus = 0;
 
     public int getQueue() {
         return queue;
@@ -79,11 +79,11 @@ public class Messages {
         this.status = status;
     }
 
-    public boolean isImageStatus() {
+    public int getImageStatus() {
         return imageStatus;
     }
 
-    public void setImageStatus(boolean imageStatus) {
+    public void setImageStatus(int imageStatus) {
         this.imageStatus = imageStatus;
     }
 }

@@ -97,7 +97,7 @@ public class CustomNotificaionUtils {
 //                lastMessage.setQueue(1);
 //            else
                 lastMessage.setQueue(0);
-                lastMessage.setImageStatus(false);
+                lastMessage.setImageStatus(0);
             messageDatabase.daoAcess().updateRecord(lastMessage);
 
 

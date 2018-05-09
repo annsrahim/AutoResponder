@@ -3,88 +3,55 @@ package com.acube.autoresponder.activity;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.app.KeyguardManager;
-import android.app.NotificationManager;
-import android.arch.persistence.room.Room;
-import android.arch.persistence.room.RoomDatabase;
-import android.content.BroadcastReceiver;
 import android.content.ComponentName;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentFilter;
-import android.content.IntentSender;
 import android.content.pm.PackageManager;
-import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteException;
 import android.graphics.Bitmap;
-import android.graphics.Color;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Environment;
-import android.os.PowerManager;
-import android.os.SystemClock;
-import android.os.Vibrator;
 import android.provider.MediaStore;
 import android.provider.Settings;
 import android.service.notification.StatusBarNotification;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.content.ContextCompat;
-import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.telephony.PhoneNumberUtils;
-import android.text.Html;
 import android.util.Log;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
-import android.webkit.WebView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
-import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
-import android.widget.TableLayout;
-import android.widget.TableRow;
 import android.widget.TextView;
 
 import com.acube.autoresponder.Config;
 import com.acube.autoresponder.R;
 import com.acube.autoresponder.database.MessageDatabase;
 import com.acube.autoresponder.database.Messages;
-import com.acube.autoresponder.services.NotificationService;
 import com.acube.autoresponder.services.ReplyTask;
+import com.acube.autoresponder.services.SendImages;
 import com.acube.autoresponder.services.WhatsAppAccessbilityService;
 import com.acube.autoresponder.utils.SharedPreferenceUtils;
 import com.acube.autoresponder.utils.Utils;
-import com.acube.autoresponder.utils.ui.ViewProxy;
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GoogleApiAvailability;
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.drive.Drive;
 
-import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -109,6 +76,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     TextView tvMessageDelay,tvLastMessageDelay,tvTemplateLastMessage;
     ImageButton ibAddMessageDelay,ibSubMessageDelay,ibLastAddMessageDelay,ibLastSubMessageDelay,ibTemplateLastMessage;
     ScheduledThreadPoolExecutor scheduledThreadPoolExecutor  = new ScheduledThreadPoolExecutor(2);
+    ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(5);
 
 
     @SuppressLint("ClickableViewAccessibility")
@@ -368,7 +336,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     protected void onResume() {
         super.onResume();
-        scheduledThreadPoolExecutor.scheduleWithFixedDelay(checkAndReply,2,5,TimeUnit.SECONDS);
+        scheduledThreadPoolExecutor.scheduleWithFixedDelay(checkAndReply,2,10,TimeUnit.SECONDS);
         if(!WhatsAppAccessbilityService.isAccessibilityOn(this,WhatsAppAccessbilityService.class))
         {
             Intent intent = new Intent (Settings.ACTION_ACCESSIBILITY_SETTINGS);
@@ -520,17 +488,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public Runnable checkAndReply = new Runnable() {
         @Override
         public void run() {
-            checkForReplyMessages();
+            //checkForReplyMessages();
         }
     };
 
 
     public void checkForReplyMessages()
     {
+
         List<Messages> messagesList = messageDatabase.daoAcess().getAllMessages();
         int templateMessagesCount = messageDatabase.daoAcess().getTemplateMessageCount();
         for(Messages message: messagesList)
         {
+            MessageDatabase msDb = Utils.getMessageDatabase(this);
             if(message.getQueue()==0)
             {
                 if(message.getStatus()<=templateMessagesCount)
@@ -540,25 +510,37 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     int imageIndex = Utils.getIndexForImage(getApplicationContext())+1;
                     if(replyStatus==0)
                     {
-                        if(message.isImageStatus())
+                        Log.i("INFO",message.getContact_number()+" "+message.getStatus());
+                        if(message.getImageStatus()==1)
                         {
-                            Log.d("Sending Image","True");
-                            message.setImageStatus(false);
-                            message.setQueue(1);
-                            messageDatabase.daoAcess().updateRecord(message);
-                            sendImageReply(message,templateMessagesCount);
+                            Log.i("Sending Image","True");
+
+                            sendImageReply(message,templateMessagesCount,msDb);
+                            msDb.close();
                             return;
                         }
-                        else
+                        else if(message.getImageStatus()==0)
                         {
-                            Log.d("Sending Image","False");
+                            Log.i("Sending Image","False");
                             if(message.getStatus()==imageIndex)
-                                message.setImageStatus(true);
+                                message.setImageStatus(1);
                             ReplyTask replyTask = new ReplyTask(this,sbn);
                             message.setQueue(1);
-                            messageDatabase.daoAcess().updateRecord(message);
+                            msDb.daoAcess().updateRecord(message);
+                           msDb.close();
                             Utils.updateReplyStatus(this,message.getContact_number());
-                            scheduledThreadPoolExecutor.schedule(replyTask,10, TimeUnit.SECONDS);
+                            scheduledExecutorService.schedule(replyTask,15, TimeUnit.SECONDS);
+                        }
+                        else if(message.getImageStatus()==2)
+                        {
+                            Log.i("image Status","Send Reply after image");
+                            ReplyTask replyTask = new ReplyTask(this,sbn);
+                            message.setImageStatus(0);
+                            message.setQueue(1);
+                            msDb.daoAcess().updateRecord(message);
+                            msDb.close();
+                            Utils.updateReplyStatus(this,message.getContact_number());
+                            scheduledExecutorService.schedule(replyTask,15, TimeUnit.SECONDS);
                         }
 
 
@@ -566,14 +548,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
                 }
             }
-            Log.d("T_____",message.getContact_number()+" "+message.getStatus());
+
         }
+
+
     }
 
-    private void sendImageReply(Messages message, int templateMessagesCount) {
-        String mobileNumber = message.getContact_number();
+    private void sendImageReply(Messages message, int templateMessagesCount,MessageDatabase msDb) {
+
         final boolean isNextMessageAvailbale;
         isNextMessageAvailbale = message.getStatus() != templateMessagesCount;
+        message.setQueue(1);
+        msDb.daoAcess().updateRecord(message);
+
+        SendImages sendImages = new SendImages(this,message.getContact_number(),message,isNextMessageAvailbale);
+       scheduledThreadPoolExecutor.schedule(sendImages,10,TimeUnit.SECONDS);
     }
 
 
