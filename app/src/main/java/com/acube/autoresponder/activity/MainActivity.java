@@ -8,6 +8,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -37,6 +38,7 @@ import com.acube.autoresponder.Config;
 import com.acube.autoresponder.R;
 import com.acube.autoresponder.database.MessageDatabase;
 import com.acube.autoresponder.database.Messages;
+import com.acube.autoresponder.services.IReplyTask;
 import com.acube.autoresponder.services.ReplyTask;
 import com.acube.autoresponder.services.SendImages;
 import com.acube.autoresponder.services.WhatsAppAccessbilityService;
@@ -61,6 +63,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private static final int REQUEST_CAMERA = 22;
     private static final int REQUEST_CODE_RESOLVE_ERR = 11;
     private static final int SELECT_FILE = 33 ;
+    private boolean isThreadIdle = false;
 
 
     MessageDatabase messageDatabase;
@@ -125,7 +128,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
         }
 
+        setImageInContainer();
 
+
+    }
+
+    private void setImageInContainer() {
+        String image1path = SharedPreferenceUtils.getStringData(this,Config.Image1Path);
+        String image2path = SharedPreferenceUtils.getStringData(this,Config.Image2Path);
+        Uri uri = Uri.parse(image1path);
+        imageView1.setImageURI(uri);
+        uri = Uri.parse(image2path);
+        imageView2.setImageURI(uri);
     }
 
     private void setLastMessageTemplate() {
@@ -148,6 +162,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     protected void onPause() {
         super.onPause();
+
 
     }
 
@@ -336,13 +351,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     protected void onResume() {
         super.onResume();
-        scheduledThreadPoolExecutor.scheduleWithFixedDelay(checkAndReply,2,10,TimeUnit.SECONDS);
+
+        scheduledThreadPoolExecutor.scheduleWithFixedDelay(checkAndReply,10,30,TimeUnit.SECONDS);
         if(!WhatsAppAccessbilityService.isAccessibilityOn(this,WhatsAppAccessbilityService.class))
         {
             Intent intent = new Intent (Settings.ACTION_ACCESSIBILITY_SETTINGS);
             startActivity (intent);
         }
     }
+
+
 
     @Override
     protected void onStop() {
@@ -488,9 +506,76 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public Runnable checkAndReply = new Runnable() {
         @Override
         public void run() {
-            //checkForReplyMessages();
+
+                checkForImageTask();
         }
     };
+
+
+    public void replyMessageInQueue()
+    {
+        List<Messages> messagesList = messageDatabase.daoAcess().getAllMessages();
+        Log.i("Run",messagesList.size()+" Count");
+        for(Messages message: messagesList) {
+            Log.i(message.getContact_number(),message.getWaitingQueue()+"");
+            int templateMessageCount = messageDatabase.daoAcess().getTemplateMessageCount();
+            if(message.getImageStatus()==1)
+            {
+                sendImageReply(message,templateMessageCount,messageDatabase);
+                message.setQueue(1);
+                messageDatabase.daoAcess().updateRecord(message);
+                return;
+            }
+            else if(message.getWaitingQueue()==1 && templateMessageCount<=message.getStatus())
+            {
+                StatusBarNotification statusBarNotification = Utils.getStatusNotification(message.getContact_number());
+                IReplyTask replyTask = new IReplyTask(this,statusBarNotification,message);
+                message.setQueue(1);
+                message.setWaitingQueue(0);
+                messageDatabase.daoAcess().updateRecord(message);
+                scheduledExecutorService.schedule(replyTask,10, TimeUnit.SECONDS);
+            }
+            else if(message.getImageStatus()==2)
+            {
+
+            }
+        }
+    }
+
+    public void checkForImageTask()
+    {
+        Log.i("Loop Check","Run");
+        int templateMessagesCount = messageDatabase.daoAcess().getTemplateMessageCount();
+        List<Messages> messagesList = messageDatabase.daoAcess().getAllMessages();
+        for(Messages message: messagesList) {
+
+
+            if (message.getImageStatus() == 1 && Utils.getReplyStatus(message.getContact_number()) == 1) {
+
+                Log.i("Image Task", "sending " + message.getContact_number());
+
+                sendImageReply(message, templateMessagesCount, messageDatabase);
+                return;
+            }
+           else if(message.getImageStatus()==2 && Utils.getReplyStatus(message.getContact_number()) == 1)
+            {
+                Log.i("Image Task","Completed next reply "+message.getContact_number());
+                StatusBarNotification statusBarNotification = Utils.getStatusNotification(message.getContact_number());
+                ReplyTask replyTask = new ReplyTask(this,statusBarNotification);
+                message.setImageStatus(0);
+                message.setQueue(1);
+                messageDatabase.daoAcess().updateRecord(message);
+                scheduledExecutorService.schedule(replyTask,5, TimeUnit.MINUTES);
+                return;
+            }
+        }
+
+
+
+
+
+    }
+
 
 
     public void checkForReplyMessages()
@@ -559,10 +644,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         final boolean isNextMessageAvailbale;
         isNextMessageAvailbale = message.getStatus() != templateMessagesCount;
         message.setQueue(1);
+        message.setImageStatus(2);
         msDb.daoAcess().updateRecord(message);
 
         SendImages sendImages = new SendImages(this,message.getContact_number(),message,isNextMessageAvailbale);
-       scheduledThreadPoolExecutor.schedule(sendImages,10,TimeUnit.SECONDS);
+       scheduledThreadPoolExecutor.schedule(sendImages,0,TimeUnit.SECONDS);
+
+
     }
 
 

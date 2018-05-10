@@ -36,6 +36,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by Anns on 23/03/18.
@@ -53,6 +54,7 @@ public class Utils {
         }
         return null;
     }
+
     public static int getReplyStatus(String number)
     {
         for(NotificationLog notificationLog:notificationLogs)
@@ -74,6 +76,17 @@ public class Utils {
         }
         messageDatabase.close();
     }
+    public static void updateReplyStatus(Context context,String number,int replyStatus)
+    {
+        MessageDatabase messageDatabase = getMessageDatabase(context);
+        Messages message = messageDatabase.daoAcess().getMessage(number);
+        for(NotificationLog notificationLog:notificationLogs)
+        {
+            if(number.equalsIgnoreCase(notificationLog.contactNumber))
+                notificationLog.replyStatus = replyStatus;
+        }
+        messageDatabase.close();
+    }
     public static void updateStatusBarNotification(String number,StatusBarNotification sbn)
     {
         for(NotificationLog notificationLog:notificationLogs)
@@ -81,6 +94,12 @@ public class Utils {
             if(number.equalsIgnoreCase(notificationLog.contactNumber))
                 notificationLog.statusBarNotification = sbn;
         }
+    }
+
+    public static long timeDifferenceOfLastReply(long lastTime)
+    {
+        long timeDifference = System.currentTimeMillis() - lastTime;
+        return TimeUnit.MILLISECONDS.toSeconds(timeDifference);
     }
 
     public static boolean notificationAccessStatus(Context context)

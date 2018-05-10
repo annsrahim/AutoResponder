@@ -45,6 +45,7 @@ public class ReplyTask implements Runnable {
             NotificationReplyService.sendReply(statusBarNotification.getNotification(), context, replyMessage);
             lastMessage.setStatus(status + 1);
             lastMessage.setQueue(0);
+
             messageDatabase.daoAcess().updateRecord(lastMessage);
             messageDatabase.close();
 

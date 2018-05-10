@@ -16,6 +16,16 @@ public class Messages {
     private String contact_name;
     private String contact_number;
 
+    public int getWaitingQueue() {
+        return waitingQueue;
+    }
+
+    public void setWaitingQueue(int waitingQueue) {
+        this.waitingQueue = waitingQueue;
+    }
+
+    private int waitingQueue = 0;
+
     public String getMessage_text() {
         return message_text;
     }
@@ -26,6 +36,16 @@ public class Messages {
 
     private String message_text;
     private long message_time;
+
+    public long getLast_reply_time() {
+        return last_reply_time;
+    }
+
+    public void setLast_reply_time(long last_reply_time) {
+        this.last_reply_time = last_reply_time;
+    }
+
+    private long last_reply_time;
     private int status;
     private int imageStatus = 0;
 

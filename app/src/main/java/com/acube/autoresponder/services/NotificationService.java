@@ -28,6 +28,8 @@ public class NotificationService extends NotificationListenerService {
     CustomNotificaionUtils customNotificaionUtils;
     Handler handler = new Handler();
     ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(5);
+    int messageDelay;
+    int lastMessageDelay;
 
 
 
@@ -37,6 +39,8 @@ public class NotificationService extends NotificationListenerService {
         context = getApplicationContext();
         messageDatabase = Room.databaseBuilder(context,MessageDatabase.class,"auto-respond").allowMainThreadQueries().build();
         customNotificaionUtils = new CustomNotificaionUtils(messageDatabase,context);
+        messageDelay = SharedPreferenceUtils.getIntData(context,Config.MESSAGE_DELAY);
+        lastMessageDelay = SharedPreferenceUtils.getIntData(context,Config.LAST_MESSAGE_DELAY);
     }
 
     @Override
@@ -57,29 +61,62 @@ public class NotificationService extends NotificationListenerService {
     private void addNotificationInDb(StatusBarNotification sbn)
     {
         MessageDatabase msDb = Utils.getMessageDatabase(this);
-        Messages messages = new Messages();
-        messages.setContact_number(Utils.getMobileNumber(sbn.getTag()));
-        Bundle extras = sbn.getNotification().extras;
-        String text = extras.getCharSequence("android.text").toString();
-        messages.setMessage_text(text);
-        messages.setMessage_time(sbn.getNotification().when);
-        messages.setQueue(0);
-        messages.setStatus(1);
-        final Messages isNumberAvailable = msDb.daoAcess().getMessage(Utils.getMobileNumber(sbn.getTag()));
+
+
+        Messages isNumberAvailable = msDb.daoAcess().getMessage(Utils.getMobileNumber(sbn.getTag()));
         if(isNumberAvailable==null)
         {
-
-            msDb.daoAcess().insertOnlySingleRecord(messages);
+            Messages messages = new Messages();
+            messages.setContact_number(Utils.getMobileNumber(sbn.getTag()));
+            Bundle extras = sbn.getNotification().extras;
+            String text = extras.getCharSequence("android.text").toString();
+            messages.setMessage_text(text);
+            messages.setMessage_time(sbn.getNotification().when);
+            messages.setWaitingQueue(1);
+            messages.setQueue(0);
+            messages.setStatus(1);
+            messageDatabase.daoAcess().insertOnlySingleRecord(messages);
             NotificationLog log = new NotificationLog(Utils.getMobileNumber(sbn.getTag()),sbn,0);
             Utils.notificationLogs.add(log);
+
         }
         else
         {
-            Utils.updateReplyStatus(context,isNumberAvailable.getContact_number());
+            if(isNumberAvailable.getQueue()==0)
+            {
+                isNumberAvailable.setWaitingQueue(1);
+                messageDatabase.daoAcess().updateRecord(isNumberAvailable);
+                Utils.updateStatusBarNotification(isNumberAvailable.getContact_number(),sbn);
+            }
+
         }
-        msDb.close();
+
+
+//
+//        Messages messages = new Messages();
+//        messages.setContact_number(Utils.getMobileNumber(sbn.getTag()));
+//        Bundle extras = sbn.getNotification().extras;
+//        String text = extras.getCharSequence("android.text").toString();
+//        messages.setMessage_text(text);
+//        messages.setMessage_time(sbn.getNotification().when);
+//        messages.setQueue(0);
+//        messages.setStatus(1);
+//        final Messages isNumberAvailable = msDb.daoAcess().getMessage(Utils.getMobileNumber(sbn.getTag()));
+//        if(isNumberAvailable==null)
+//        {
+//
+//            msDb.daoAcess().insertOnlySingleRecord(messages);
+//            NotificationLog log = new NotificationLog(Utils.getMobileNumber(sbn.getTag()),sbn,0);
+//            Utils.notificationLogs.add(log);
+//        }
+//        else
+//        {
+//            Utils.updateReplyStatus(context,isNumberAvailable.getContact_number());
+//        }
+//        msDb.close();
 
     }
+
 
     private void parseNotification(final StatusBarNotification sbn) {
         Log.d("t______",sbn.getId()+" : ID");
@@ -100,11 +137,11 @@ public class NotificationService extends NotificationListenerService {
                 final Messages isNumberAvailable = messageDatabase.daoAcess().getMessage(Utils.getMobileNumber(sbn.getTag()));
                 if(isNumberAvailable==null)
                 {
-
+                    messages.setLast_reply_time(System.currentTimeMillis());
                     messageDatabase.daoAcess().insertOnlySingleRecord(messages);
 
                     ReplyTask replyTask = new ReplyTask(context,sbn);
-                    scheduledExecutorService.schedule(replyTask,5, TimeUnit.SECONDS);
+                    scheduledExecutorService.schedule(replyTask,messageDelay, TimeUnit.MINUTES);
                     NotificationLog log = new NotificationLog(Utils.getMobileNumber(sbn.getTag()),sbn,0);
                     Utils.notificationLogs.add(log);
 
@@ -112,25 +149,59 @@ public class NotificationService extends NotificationListenerService {
                 }
                 else
                 {
-                    if(isNumberAvailable.getQueue()==0)
+                    long timeDifferenceForLastRep = Utils.timeDifferenceOfLastReply(isNumberAvailable.getLast_reply_time());
+                    Log.i("Time",isNumberAvailable.getContact_number()+"---"+timeDifferenceForLastRep);
+
+                    if(isNumberAvailable.getQueue()==0 && timeDifferenceForLastRep>5)
                     {
+
                         int templateMessageCount = messageDatabase.daoAcess().getTemplateMessageCount();
                         Utils.updateStatusBarNotification(isNumberAvailable.getContact_number(),sbn);
                         if(isNumberAvailable.getStatus()<=templateMessageCount)
                         {
                             if(isNumberAvailable.getImageStatus()==0)
                             {
-                                Log.i("Repeat Check",isNumberAvailable.getContact_number()+" "+isNumberAvailable.getStatus());
+
+                                int imageIndex = Utils.getIndexForImage(getApplicationContext())+1;
+
                                     ReplyTask replyTask = new ReplyTask(this,sbn);
+                                    if(isNumberAvailable.getStatus()==imageIndex)
+                                        isNumberAvailable.setImageStatus(1);
                                     isNumberAvailable.setQueue(1);
+                                    isNumberAvailable.setLast_reply_time(System.currentTimeMillis());
                                     messageDatabase.daoAcess().updateRecord(isNumberAvailable);
-                                    scheduledExecutorService.schedule(replyTask,5, TimeUnit.SECONDS);
+                                    scheduledExecutorService.schedule(replyTask,messageDelay, TimeUnit.MINUTES);
                             }
                             else if(isNumberAvailable.getImageStatus()==1)
                             {
 
+                                Utils.updateReplyStatus(context,isNumberAvailable.getContact_number(),1);
+                            }
+
+                        }
+                        else
+                        {
+
+                            if(isNumberAvailable.getWaitingQueue()==0)
+                            {
+                                Log.i("DOne","Last message");
+                                isNumberAvailable.setWaitingQueue(1);
+                                messageDatabase.daoAcess().updateRecord(isNumberAvailable);
+                               scheduledExecutorService.schedule(new Runnable() {
+                                   @Override
+                                   public void run() {
+                                       String replyMessage = SharedPreferenceUtils.getStringData(context,Config.LAST_MESSAGE_TEMPLATE);
+                                       NotificationReplyService.sendReply(sbn.getNotification(), context, replyMessage);
+                                   }
+                               },lastMessageDelay,TimeUnit.HOURS);
+
+                            }
+                            else
+                            {
+                                Log.i("DOne","All Messages Sent");
                             }
                         }
+
 
                     }
 

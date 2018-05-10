@@ -46,97 +46,138 @@ public class CustomNotificaionUtils {
 
 
 
-    public void scheduledReply(final StatusBarNotification scheduledSbn)
-    {
-        int messageDelay = SharedPreferenceUtils.getIntData(context,Config.MESSAGE_DELAY);
-        ScheduledExecutorService scheduledExecutorService =
-                Executors.newScheduledThreadPool(100);
+//    public void scheduledReply(final StatusBarNotification scheduledSbn)
+//    {
+//        int messageDelay = SharedPreferenceUtils.getIntData(context,Config.MESSAGE_DELAY);
+//        ScheduledExecutorService scheduledExecutorService =
+//                Executors.newScheduledThreadPool(100);
+//
+//        ScheduledFuture scheduledFuture =
+//                scheduledExecutorService.schedule(new Callable() {
+//                                                      public Object call() throws Exception {
+//                                                           replyNotification(scheduledSbn,Utils.getMobileNumber(scheduledSbn.getTag()));
+//                                                          return "Called!";
+//                                                      }
+//                                                  },
+//                        messageDelay,
+//                        TimeUnit.SECONDS);
+//    }
 
-        ScheduledFuture scheduledFuture =
-                scheduledExecutorService.schedule(new Callable() {
-                                                      public Object call() throws Exception {
-                                                           replyNotification(scheduledSbn,Utils.getMobileNumber(scheduledSbn.getTag()));
-                                                          return "Called!";
-                                                      }
-                                                  },
-                        messageDelay,
-                        TimeUnit.SECONDS);
-    }
+//    public void scheduleReplyAfterImage(final StatusBarNotification scheduledSbn)
+//    {
+//        int messageDelay = SharedPreferenceUtils.getIntData(context,Config.MESSAGE_DELAY);
+////        messageDelay += 1;
+////        messageDelay *= 60;
+////        messageDelay += 30;
+//        ScheduledExecutorService scheduledExecutorService =
+//                Executors.newScheduledThreadPool(10);
+//
+//        ScheduledFuture scheduledFuture =
+//                scheduledExecutorService.schedule(new Callable() {
+//                                                      public Object call() throws Exception {
+//                                                          replyTextAfterImage(scheduledSbn,Utils.getMobileNumber(scheduledSbn.getTag()));
+//                                                          return "Called!";
+//                                                      }
+//                                                  },
+//                        10,
+//                        TimeUnit.SECONDS);
+//        scheduledExecutorService.shutdown();
+//    }
+//public void replyNotification(StatusBarNotification sn, String mobileNumber) {
+//        String replyMessage = "Hi Hello";
+//        Messages lastMessage = messageDatabase.daoAcess().getMessage(mobileNumber);
+//        if (lastMessage != null) {
+//            int status = lastMessage.getStatus();
+//            replyMessage = messageDatabase.daoAcess().getTemplateByOrderNo(status);
+//            NotificationReplyService.sendReply(sn.getNotification(), context, replyMessage);
+//            lastMessage.setStatus(status+1);
+////            if(isImageTaskAvailable)
+////                lastMessage.setQueue(1);
+////            else
+//                lastMessage.setQueue(0);
+//                lastMessage.setImageStatus(0);
+//            messageDatabase.daoAcess().updateRecord(lastMessage);
+//
+//
+//        }
+//
+//
+//    }
+//
+//    public void replyTextAfterImage(StatusBarNotification sn, String mobileNumber) {
+//        String replyMessage = "Hi Hello";
+//        Messages lastMessage = messageDatabase.daoAcess().getMessage(mobileNumber);
+//        if (lastMessage != null) {
+//            int status = lastMessage.getStatus();
+//            replyMessage = messageDatabase.daoAcess().getTemplateByOrderNo(status)+mobileNumber;
+//            NotificationReplyService.sendReply(sn.getNotification(), context, replyMessage);
+//            lastMessage.setStatus(status+1);
+//                lastMessage.setQueue(0);
+//            messageDatabase.daoAcess().updateRecord(lastMessage);
+//
+//
+//        }
+//
+//
+//    }
 
-    public void scheduleReplyAfterImage(final StatusBarNotification scheduledSbn)
-    {
-        int messageDelay = SharedPreferenceUtils.getIntData(context,Config.MESSAGE_DELAY);
-//        messageDelay += 1;
-//        messageDelay *= 60;
-//        messageDelay += 30;
-        ScheduledExecutorService scheduledExecutorService =
-                Executors.newScheduledThreadPool(10);
-
-        ScheduledFuture scheduledFuture =
-                scheduledExecutorService.schedule(new Callable() {
-                                                      public Object call() throws Exception {
-                                                          replyTextAfterImage(scheduledSbn,Utils.getMobileNumber(scheduledSbn.getTag()));
-                                                          return "Called!";
-                                                      }
-                                                  },
-                        10,
-                        TimeUnit.SECONDS);
-        scheduledExecutorService.shutdown();
-    }
-
-
-    public void replyNotification(StatusBarNotification sn, String mobileNumber) {
-        String replyMessage = "Hi Hello";
-        Messages lastMessage = messageDatabase.daoAcess().getMessage(mobileNumber);
-        if (lastMessage != null) {
-            int status = lastMessage.getStatus();
-            replyMessage = messageDatabase.daoAcess().getTemplateByOrderNo(status);
-            NotificationReplyService.sendReply(sn.getNotification(), context, replyMessage);
-            lastMessage.setStatus(status+1);
-//            if(isImageTaskAvailable)
-//                lastMessage.setQueue(1);
-//            else
-                lastMessage.setQueue(0);
-                lastMessage.setImageStatus(0);
-            messageDatabase.daoAcess().updateRecord(lastMessage);
-
-
-        }
-
-
-    }
-    public void replyTextAfterImage(StatusBarNotification sn, String mobileNumber) {
-        String replyMessage = "Hi Hello";
-        Messages lastMessage = messageDatabase.daoAcess().getMessage(mobileNumber);
-        if (lastMessage != null) {
-            int status = lastMessage.getStatus();
-            replyMessage = messageDatabase.daoAcess().getTemplateByOrderNo(status)+mobileNumber;
-            NotificationReplyService.sendReply(sn.getNotification(), context, replyMessage);
-            lastMessage.setStatus(status+1);
-                lastMessage.setQueue(0);
-            messageDatabase.daoAcess().updateRecord(lastMessage);
-
-
-        }
+//    public void replyNotification(StatusBarNotification sn, String mobileNumber) {
+//        String replyMessage = "Hi Hello";
+//        Messages lastMessage = messageDatabase.daoAcess().getMessage(mobileNumber);
+//        if (lastMessage != null) {
+//            int status = lastMessage.getStatus();
+//            replyMessage = messageDatabase.daoAcess().getTemplateByOrderNo(status);
+//            NotificationReplyService.sendReply(sn.getNotification(), context, replyMessage);
+//            lastMessage.setStatus(status+1);
+////            if(isImageTaskAvailable)
+////                lastMessage.setQueue(1);
+////            else
+//                lastMessage.setQueue(0);
+//                lastMessage.setImageStatus(0);
+//            messageDatabase.daoAcess().updateRecord(lastMessage);
+//
+//
+//        }
+//
+//
+//    }
+//
+//    public void replyTextAfterImage(StatusBarNotification sn, String mobileNumber) {
+//        String replyMessage = "Hi Hello";
+//        Messages lastMessage = messageDatabase.daoAcess().getMessage(mobileNumber);
+//        if (lastMessage != null) {
+//            int status = lastMessage.getStatus();
+//            replyMessage = messageDatabase.daoAcess().getTemplateByOrderNo(status)+mobileNumber;
+//            NotificationReplyService.sendReply(sn.getNotification(), context, replyMessage);
+//            lastMessage.setStatus(status+1);
+//                lastMessage.setQueue(0);
+//            messageDatabase.daoAcess().updateRecord(lastMessage);
+//
+//
+//        }
+//
+//
+//    }
+//    public void scheduledLastReply(final StatusBarNotification scheduledSbn)
+//    {
+//        int lastMessageDelay = SharedPreferenceUtils.getIntData(context,Config.LAST_MESSAGE_DELAY);
+//        ScheduledExecutorService scheduledExecutorService =
+//                Executors.newScheduledThreadPool(5);
+//
+//        ScheduledFuture scheduledFuture =
+//                scheduledExecutorService.schedule(new Callable() {
+//                                                      public Object call() throws Exception {
+//                                                          lastReplyNotification(scheduledSbn,Utils.getMobileNumber(scheduledSbn.getTag()));
+//                                                          return "Called!";
+//                                                      }
+//                                                  },
+//                        lastMessageDelay,
+//                        TimeUnit.HOURS);
+//    }
 
 
-    }
-    public void scheduledLastReply(final StatusBarNotification scheduledSbn)
-    {
-        int lastMessageDelay = SharedPreferenceUtils.getIntData(context,Config.LAST_MESSAGE_DELAY);
-        ScheduledExecutorService scheduledExecutorService =
-                Executors.newScheduledThreadPool(5);
 
-        ScheduledFuture scheduledFuture =
-                scheduledExecutorService.schedule(new Callable() {
-                                                      public Object call() throws Exception {
-                                                          lastReplyNotification(scheduledSbn,Utils.getMobileNumber(scheduledSbn.getTag()));
-                                                          return "Called!";
-                                                      }
-                                                  },
-                        lastMessageDelay,
-                        TimeUnit.HOURS);
-    }
+
     public void lastReplyNotification(StatusBarNotification sn, String mobileNumber) {
         String replyMessage = SharedPreferenceUtils.getStringData(context,Config.LAST_MESSAGE_TEMPLATE);
             NotificationReplyService.sendReply(sn.getNotification(), context, replyMessage);

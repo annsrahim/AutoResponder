@@ -13,33 +13,37 @@ import java.util.concurrent.Callable;
  * Created by Anns on 04/05/18.
  */
 
-public class IReplyTask implements Callable<Messages> {
+public class IReplyTask implements Runnable {
 
     private MessageDatabase messageDatabase;
     private Context context;
     private StatusBarNotification statusBarNotification;
+    private Messages messages;
 
-    public IReplyTask( Context context, MessageDatabase messageDatabase,StatusBarNotification statusBarNotification) {
-        this.messageDatabase = messageDatabase;
+
+    public IReplyTask(Context context, StatusBarNotification statusBarNotification,Messages mes) {
+        this.messageDatabase = Utils.getMessageDatabase(context);
         this.context = context;
         this.statusBarNotification = statusBarNotification;
+        this.messages = mes;
+
     }
 
     @Override
-    public Messages call() throws Exception {
-        String mobileNumber = Utils.getMobileNumber(statusBarNotification.getTag());
-        String replyMessage;
-        Messages lastMessage = messageDatabase.daoAcess().getMessage(mobileNumber);
-        if(lastMessage !=null)
+    public void run() {
+        replyNotification();
+    }
 
-        {
-            int status = lastMessage.getStatus();
-            replyMessage = messageDatabase.daoAcess().getTemplateByOrderNo(status);
+    public void replyNotification() {
+
+            int imageIndex = Utils.getIndexForImage(context)+1;
+            int status = messages.getStatus();
+            String replyMessage = messageDatabase.daoAcess().getTemplateByOrderNo(status);
             NotificationReplyService.sendReply(statusBarNotification.getNotification(), context, replyMessage);
-            lastMessage.setStatus(status + 1);
-            lastMessage.setQueue(0);
-            messageDatabase.daoAcess().updateRecord(lastMessage);
-        }
-        return lastMessage;
+            if(messages.getStatus()==imageIndex)
+                messages.setImageStatus(1);
+            messages.setStatus(status+1);
+            messages.setQueue(0);
+            messageDatabase.daoAcess().updateRecord(messages);
     }
 }
